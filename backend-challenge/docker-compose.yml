@@ -1,0 +1,69 @@
+services:
+  app:
+    container_name: "order-service"
+    build:
+      context: .
+      dockerfile: cmd/server/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: oolio-order-service
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      API_KEY: ${ADMIN_API_KEY} # Or fetch from a secret management
+      PROCESSED_COUPONS_FILE_PATH: /app/data/processed_coupons.txt
+    depends_on:
+      - db
+      # - redis
+    # For local development, mount source code for hot-reloading (if you set it up)
+    # volumes:
+      # - .:/app
+      # - processed_coupons_data:/app/data
+
+  db:
+    container_name: "order-service-database-service"
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: oolio-order-service
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432" # Expose for local DB access
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persistent data volume
+
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379" # Expose for local Redis access
+  #   command: redis-server --appendonly yes # Enable AOF for data persistence
+  #   volumes:
+  #     - redis_data:/data # Persistent data volume
+
+  # coupon_preprocessor:
+    # build:
+    #   context: ./cmd/worker
+    #   dockerfile: Dockerfile
+    # environment:
+    #   # Pass URLs of coupon files to the pre-processor (or hardcode if they don't change)
+    #   COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
+    #   COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
+    #   COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
+    #   # Output path for the pre-processed file within this container
+    #   OUTPUT_FILE_PATH: /output/processed_coupons.txt
+    # volumes:
+    #   # Mount the same named volume here, but to an output path for the pre-processor
+    #   - processed_coupons_data:/output
+    # # This service is usually run manually or via a cron, not always up
+    # # If you want it to run on 'docker-compose up', you can define a command:
+    # # command: ["./coupon_preprocessor"] # The binary name from its Dockerfile
+
+volumes:
+  db_data:
+  # redis_data:
+  # processed_coupons_data:
+  # .:

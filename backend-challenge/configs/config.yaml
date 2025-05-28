@@ -1,0 +1,24 @@
+# configs/config.yaml
+environment: development
+server:
+  port: ":8080"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 120s
+database:
+  host: "localhost"
+  port: 5432
+  user: "user"
+  # password: ""
+  dbname: "order-service"
+  sslmode: "disable"
+  max_conns: 10
+  min_conns: 5
+  conn_max_lifetime: 5m
+redis:
+  host: "localhost"
+  port: 6379
+  # password: ""
+  # db: 0
+api_keys:
+  admin_key: "apitest"
