@@ -93,7 +93,7 @@ func (app *Application) RunServer() error {
 func (app *Application) Shutdown(shutdownCtx context.Context) error {
 
 	if err := app.Server.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("Server force shutdown")
+		return fmt.Errorf("server force shutdown")
 	}
 	app.Logger.Info("Server shutdown gracefully")
 	return nil

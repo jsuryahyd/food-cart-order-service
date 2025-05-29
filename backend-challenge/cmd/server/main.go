@@ -43,7 +43,7 @@ func main() {
 	defer cancel()
 
 	if err := application.Shutdown(ctxWithTimeout); err != nil {
-		log.Fatalf("Server failed to start %v", err)
+		log.Fatalf("Server failed to shutdown %v", err)
 		os.Exit(1)
 	}
 
