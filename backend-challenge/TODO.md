@@ -1,6 +1,6 @@
 - ~~Create basic server~~
 - ~~Setup docker for the server~~
-- Setup a logger
+- ~~Setup a logger~~
 - Add CI/CD
 	- static analysis with semgrep rules (for security and code quality)
 	- tests

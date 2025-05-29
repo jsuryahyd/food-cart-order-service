@@ -28,7 +28,7 @@ type DatabaseConfig struct {
 	Port            int16         `mapstructure:"port"`
 	User            string        `mapstructure:"user"`
 	Password        string        `mapstructure:"password"`
-	Dbname          string        `mapstructure:"dbname"`
+	DbName          string        `mapstructure:"db_name"`
 	Sslmode         string        `mapstructure:"sslmode"`
 	MaxConns        int8          `mapstructure:"max_conns"`
 	MinConns        int8          `mapstructure:"min_conns"`
@@ -52,6 +52,13 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	v.AutomaticEnv()
 	v.SetEnvPrefix("APP")
 
+	// env vars (set from docker-compose) not .env file
+	if err := v.BindEnv("database.host", "DB_HOST"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind DB_HOST env var: %v\n", err)
+	}
+	if err := v.BindEnv("database.db_name", "DB_NAME"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind DB_NAME env var: %v\n", err)
+	}
 	if err := v.BindEnv("database.password", "DB_PASSWORD"); err != nil {
 		fmt.Fprintf(os.Stderr, "WARN: Failed to bind DB_PASSWORD env var: %v\n", err)
 	}
@@ -65,16 +72,18 @@ func LoadConfig(configFilePath string) (*Config, error) {
 
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return nil, fmt.Errorf("Config file not found %s \n", configFilePath)
+			return nil, fmt.Errorf("config file not found %s", configFilePath)
 		} else {
-			return nil, fmt.Errorf("Error loading config %w", err)
+			return nil, fmt.Errorf("error loading config %w", err)
 		}
 	}
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal config %v %w", v, err)
+		return nil, fmt.Errorf("failed to unmarshal config %v %w", v, err)
 	}
+
+	fmt.Println(&config)
 
 	return &config, nil
 

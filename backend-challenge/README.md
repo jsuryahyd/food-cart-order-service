@@ -21,15 +21,11 @@
 
 ## Technology Choices
 - Golang for backend server and worker (Required)
-- Postgres
+- Postgres - with squirrel sql query builder. 
 - Redis for Cache and as a message Queue
 - Gin for router.
 - zap for logging
-- viper for config loading
-
-
-
-
+- viper for loading config
 
 
 

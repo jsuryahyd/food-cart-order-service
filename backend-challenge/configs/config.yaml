@@ -9,8 +9,8 @@ database:
   host: "localhost"
   port: 5432
   user: "user"
-  # password: ""
-  dbname: "order-service"
+  password: "12321"
+  db_name: "oolio-order-service"
   sslmode: "disable"
   max_conns: 10
   min_conns: 5

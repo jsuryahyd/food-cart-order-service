@@ -11,7 +11,7 @@ services:
       DB_PORT: 5432
       DB_USER: user
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: oolio-order-service
+      DB_NAME: ${DB_NAME}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       API_KEY: ${ADMIN_API_KEY} # Or fetch from a secret management
@@ -25,10 +25,10 @@ services:
       # - processed_coupons_data:/app/data
 
   db:
-    container_name: "order-service-database-service"
+    container_name: "order-service-database"
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: oolio-order-service
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: user
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:

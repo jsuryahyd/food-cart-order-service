@@ -1,3 +1,5 @@
+Solution in `advanced-challenge` branch of this repo - inside backend-challenge/ folder
+
 # Shopping Cart
 
 Build a mini food ordering web app featuring product listing and a functional shopping cart.\
