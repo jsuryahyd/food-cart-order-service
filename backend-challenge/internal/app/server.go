@@ -28,7 +28,7 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		config.Database.User, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.DbName)
 
-	db, dbErr := db_setup.GetConnection(dbURL, logger)
+	dbConn, dbErr := db_setup.GetConnection(dbURL, logger)
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -36,8 +36,14 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 		logger.Fatal("Failed to run migrations", migrationErr)
 		return nil, migrationErr
 	}
-	if config.Environment == "development" {
-
+	if config.Environment == "development" || config.Environment == "test" {
+		logger.Info("Running seed data for development environment...")
+		if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
+			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
+		}
+		if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
+			logger.Fatal("Failed to seed database", err)
+		}
 	}
 
 	router := gin.New()
@@ -68,7 +74,7 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	return &Application{
 		Router: router,
 		Server: server,
-		DB:     db,
+		DB:     dbConn,
 		Logger: logger,
 	}, nil
 
