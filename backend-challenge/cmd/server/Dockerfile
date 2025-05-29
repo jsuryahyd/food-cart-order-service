@@ -30,6 +30,7 @@ RUN mkdir -p /app/data
 COPY api/openapi.yaml api/openapi.yaml
 COPY configs/ configs/
 COPY web/ web/
+COPY db/migrations db/migrations
 
 # Expose the port your Go application listens on
 EXPOSE 8080
