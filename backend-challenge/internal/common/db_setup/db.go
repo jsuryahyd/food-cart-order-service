@@ -14,7 +14,6 @@ func GetConnection(dbURL string, logger *zap.SugaredLogger) (*sql.DB, error) {
 	var err error
 
 	for i := 0; i < maxAttempts; i++ {
-		logger.Infof("Connection Attempt to DB %s", dbURL)
 		if db, err = sql.Open("postgres", dbURL); err != nil {
 			logger.Errorf("Failed to get db connection %v", err)
 			time.Sleep(2 * time.Second)
