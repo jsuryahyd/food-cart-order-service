@@ -32,7 +32,6 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 		return nil, dbErr
 	}
 	if migrationErr := db_setup.RunMigrations(dbURL, logger); migrationErr != nil {
-		logger.Fatal("Failed to run migrations", migrationErr)
 		return nil, migrationErr
 	}
 	// if config.Environment == "development" || config.Environment == "test" {

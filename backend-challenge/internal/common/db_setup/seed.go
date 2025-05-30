@@ -15,7 +15,7 @@ import (
 func TruncateTables(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 	logger.Info("Truncating tables before seeding...")
 	// Order matters due to foreign key constraints (truncate children first)
-	tables := []string{"order_items", "orders", "stock_inventory", "products", "users"}
+	tables := []string{"order_items", "orders", "stock_inventory", "products", "categories", "users"}
 	for _, table := range tables {
 		// TRUNCATE ... RESTART IDENTITY would reset sequence if using SERIAL,
 		// but we're using UUIDs, so simple TRUNCATE is fine.
@@ -71,6 +71,23 @@ func SeedData(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 
 	// --- 2. Seed Products (30+ products, >7 categories) ---
 	categories := []string{"Main Course", "Pizza", "Burgers", "Sides", "Beverages", "Desserts", "Salads", "Appetizers", "Seafood", "Noodles"}
+	categoryIDs := []uuid.UUID{}
+	for _, name := range categories {
+		catId := uuid.New()
+		categoryIDs = append(categoryIDs, catId)
+
+		builder := sq.Insert("categories").Columns("id", "name").Values(catId, name)
+		sql, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+
+		if err != nil {
+			return fmt.Errorf("failed to build categories insert query: %w", err)
+		}
+
+		if _, err := tx.ExecContext(ctx, sql, args...); err != nil {
+			return fmt.Errorf("failed to insert category %s: %w", name, err)
+		}
+	}
+
 	productIDs := []uuid.UUID{}
 	productsToSeed := 35
 
@@ -81,11 +98,11 @@ func SeedData(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 		productIDs = append(productIDs, productID)
 		name := fmt.Sprintf("Product %d %s", i+1, categories[rand.Intn(len(categories))])
 		price := float64(rand.Intn(400)+50) + rand.Float64() // Random price between 50 and 450
-		category := categories[rand.Intn(len(categories))]
+		categoryId := categoryIDs[rand.Intn(len(categories))]
 
 		builder := sq.Insert("products").
-			Columns("id", "name", "price", "category").
-			Values(productID, name, price, category)
+			Columns("id", "name", "price", "category_id").
+			Values(productID, name, price, categoryId)
 		sql, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 		if err != nil {
 			return fmt.Errorf("failed to build product insert query: %w", err)

@@ -1,3 +1,4 @@
+## Project Setup
 - ~~Create basic server~~
 - ~~Setup docker for the server~~
 - ~~Setup a logger~~
@@ -5,7 +6,7 @@
 	- static analysis with semgrep rules (for security and code quality)
 	- tests
 	- test deployment to ECS
-- Add database with seed-data, and connnect to the server
+- ~~Add database with seed-data, and connnect to the server~~
 - Security: [Not implementing]
 	- audit docker image
 	- audit go dependancies
@@ -18,6 +19,7 @@
 - No middleware - can introduce pagination as middleware
 - validate pagination values - 0 < pageSize < 100; page >= 0
 - Happy path: return list with pagination
+- Add Filter query params for name and categoryId (migrate to create categories table)
 - Test for empty array if db is empty. (status=200)
 - Test for 500 errors
 
