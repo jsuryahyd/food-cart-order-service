@@ -33,18 +33,17 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 		return nil, dbErr
 	}
 	if migrationErr := db_setup.RunMigrations(dbURL, logger); migrationErr != nil {
-		logger.Fatal("Failed to run migrations", migrationErr)
 		return nil, migrationErr
 	}
-	if config.Environment == "development" || config.Environment == "test" {
-		logger.Info("Running seed data for development environment...")
-		if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
-			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
-		}
-		if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
-			logger.Fatal("Failed to seed database", err)
-		}
-	}
+	// if config.Environment == "development" || config.Environment == "test" {
+	// 	logger.Info("Running seed data for development environment...")
+	// 	if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
+	// 		return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
+	// 	}
+	// 	if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
+	// 		logger.Fatal("Failed to seed database", err)
+	// 	}
+	// }
 
 	router := gin.New()
 
