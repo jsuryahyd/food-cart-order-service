@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type Logger = zap.SugaredLogger
+
 var logger *zap.Logger
 
 // InitLogger initializes the zap logger for production
@@ -25,7 +27,7 @@ func InitLogger() error {
 }
 
 // GetLogger returns the global zap logger
-func GetLogger() *zap.SugaredLogger {
+func GetLogger() *Logger {
 	if logger == nil {
 		_ = InitLogger()
 	}
@@ -60,7 +62,7 @@ func GinLogger() gin.HandlerFunc {
 }
 
 // WithContext returns a logger with context fields (for request-scoped logging)
-func WithContext(ctx context.Context) *zap.SugaredLogger {
+func WithContext(ctx context.Context) *Logger {
 	return GetLogger().With("request_id", getRequestID(ctx))
 }
 

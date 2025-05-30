@@ -8,10 +8,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"go.uber.org/zap"
+	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
-func RunMigrations(dbURL string, logger *zap.SugaredLogger) error {
+func RunMigrations(dbURL string, logger *logging.Logger) error {
 	m, err := migrate.New("file://db/migrations", dbURL)
 	if err != nil {
 		return fmt.Errorf("failed to init migration %w", err)

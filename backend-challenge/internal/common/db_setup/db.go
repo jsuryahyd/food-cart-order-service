@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
-func GetConnection(dbURL string, logger *zap.SugaredLogger) (*sql.DB, error) {
+func GetConnection(dbURL string, logger *logging.Logger) (*sql.DB, error) {
 	const maxAttempts = 3
 	var db *sql.DB
 	var err error

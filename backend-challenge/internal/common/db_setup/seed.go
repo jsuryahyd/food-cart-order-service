@@ -8,11 +8,11 @@ import (
 
 	sq "github.com/Masterminds/squirrel" // Alias for convenience
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
 // In internal/common/db_setup/seed.go or a new utility file
-func TruncateTables(ctx context.Context, db *sql.DB, logger *zap.SugaredLogger) error {
+func TruncateTables(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 	logger.Info("Truncating tables before seeding...")
 	// Order matters due to foreign key constraints (truncate children first)
 	tables := []string{"order_items", "orders", "stock_inventory", "products", "users"}
@@ -31,8 +31,8 @@ func TruncateTables(ctx context.Context, db *sql.DB, logger *zap.SugaredLogger) 
 }
 
 // SeedData inserts initial data into the database.
-// This function is for development/testing purposes.
-func SeedData(ctx context.Context, db *sql.DB, logger *zap.SugaredLogger) error {
+// This function is for development/testing purposes.logging.Logger
+func SeedData(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 	logger.Info("Starting database seeding...")
 
 	// Use a transaction for atomic seeding

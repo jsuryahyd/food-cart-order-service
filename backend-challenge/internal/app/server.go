@@ -10,13 +10,12 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/db_setup"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
-	"go.uber.org/zap"
 )
 
 type Application struct {
 	Server *http.Server
 	DB     *sql.DB
-	Logger *zap.SugaredLogger
+	Logger *logging.Logger
 	Router *gin.Engine
 }
 
@@ -36,15 +35,15 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 		logger.Fatal("Failed to run migrations", migrationErr)
 		return nil, migrationErr
 	}
-	if config.Environment == "development" || config.Environment == "test" {
-		logger.Info("Running seed data for development environment...")
-		if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
-			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
-		}
-		if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
-			logger.Fatal("Failed to seed database", err)
-		}
-	}
+	// if config.Environment == "development" || config.Environment == "test" {
+	// 	logger.Info("Running seed data for development environment...")
+	// 	if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
+	// 		return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
+	// 	}
+	// 	if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
+	// 		logger.Fatal("Failed to seed database", err)
+	// 	}
+	// }
 
 	router := gin.New()
 
