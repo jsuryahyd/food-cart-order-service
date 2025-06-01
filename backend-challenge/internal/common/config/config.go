@@ -15,7 +15,7 @@ type Config struct {
 	TestDB      TestDBConfig   `mapstructure:"testdb"`
 	Redis       RedisConfig    `mapstructure:"redis"`
 	ApiKeys     ApiKeysConfig  `mapstructure:"api_keys"`
-	Misc        interface{}    `mapstructure:"misc"`
+	Misc        MiscConfig     `mapstructure:"misc"`
 }
 
 type ServerConfig struct {
@@ -57,6 +57,10 @@ type RedisConfig struct {
 
 type ApiKeysConfig struct {
 	AdminKey string `mapstructure:"admin_api_key"`
+}
+
+type MiscConfig struct {
+	ShouldSeedData bool `mapstructure:"should_seed_Data"`
 }
 
 func LoadConfig(configFilePath string) (*Config, error) {

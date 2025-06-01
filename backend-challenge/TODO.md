@@ -17,6 +17,8 @@
 ### GET List Products api
 - No auth
 - No middleware - can introduce pagination as middleware
+- Response should include metadata like total, nextUrl etc; default pagination to 25
+- Response Headers
 - validate pagination values - 0 < pageSize < 100; page >= 0
 - Happy path: return list with pagination
 - Add Filter query params for name and categoryId (migrate to create categories table)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"time"
 
 	sq "github.com/Masterminds/squirrel" // Alias for convenience
 	"github.com/google/uuid"
@@ -99,10 +100,14 @@ func SeedData(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 		name := fmt.Sprintf("Product %d %s", i+1, categories[rand.Intn(len(categories))])
 		price := float64(rand.Intn(400)+50) + rand.Float64() // Random price between 50 and 450
 		categoryId := categoryIDs[rand.Intn(len(categories))]
-
+		var deletedAt *time.Time
+		if i%8 == 0 {
+			t := time.Now().Add(-5 * time.Second)
+			deletedAt = &t
+		}
 		builder := sq.Insert("products").
-			Columns("id", "name", "price", "category_id").
-			Values(productID, name, price, categoryId)
+			Columns("id", "name", "price", "category_id", "deleted_at").
+			Values(productID, name, price, categoryId, deletedAt)
 		sql, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 		if err != nil {
 			return fmt.Errorf("failed to build product insert query: %w", err)

@@ -32,3 +32,5 @@ redis:
   # db: 0
 api_keys:
   admin_key: "apitest"
+misc:
+  should_seed_data: true

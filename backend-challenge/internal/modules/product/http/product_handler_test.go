@@ -19,6 +19,7 @@ import (
 	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/errors"
 	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities" // Alias the handler package
 	producthandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http"
+	pdto "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http/dtos"
 	pr "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository" // For pr.Options
 )
 
@@ -87,7 +88,7 @@ func TestProductHandler_GetProductByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var responseProduct pe.Product
+		var responseProduct pdto.ProductResponse
 		err := json.Unmarshal(w.Body.Bytes(), &responseProduct)
 		require.NoError(t, err)
 
@@ -135,7 +136,7 @@ func TestProductHandler_GetProductByID(t *testing.T) {
 	t.Run("should return 400 Bad Request if service returns ErrInvalidInput", func(t *testing.T) {
 
 		zeroUUID := uuid.Nil
-		mockService.On("GetProductByID", mock.AnythingOfType("*context.emptyCtx"), zeroUUID, defaultOptions).Return(nil, apperrors.ErrInvalidInput).Once()
+		mockService.On("GetProductByID", mock.Anything, zeroUUID, defaultOptions).Return(nil, apperrors.ErrInvalidInput).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product/"+zeroUUID.String(), nil)
 		w := httptest.NewRecorder()
@@ -152,7 +153,7 @@ func TestProductHandler_GetProductByID(t *testing.T) {
 	t.Run("should return 500 Internal Server Error for other unexpected service errors", func(t *testing.T) {
 		serviceErrorUUID := uuid.New()
 
-		mockService.On("GetProductByID", mock.AnythingOfType("*context.emptyCtx"), serviceErrorUUID, defaultOptions).Return(nil, errors.New("database connection lost")).Once()
+		mockService.On("GetProductByID", mock.Anything, serviceErrorUUID, defaultOptions).Return(nil, errors.New("database connection lost")).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product/"+serviceErrorUUID.String(), nil)
 		w := httptest.NewRecorder()
@@ -174,7 +175,6 @@ func TestProductHandler_ListProducts(t *testing.T) {
 	handler := producthandler.NewProductHandler(mockService)
 	router := gin.New()
 	router.GET("/product", handler.ListProducts)
-
 	// Sample Product Entities for list responses
 	product1 := &pe.Product{Id: uuid.New(), Name: "Latte", Price: 4.00, IsActive: true}
 	product2 := &pe.Product{Id: uuid.New(), Name: "Croissant", Price: 3.50, IsActive: true}
@@ -183,7 +183,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 	t.Run("should return 200 OK and list of products with no query params", func(t *testing.T) {
 		// Expected parameters passed to the service should be default/empty.
 		expectedParams := &pe.ProductListQueryParams{}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), mock.MatchedBy(func(params *pe.ProductListQueryParams) bool {
+		mockService.On("GetListOfProducts", mock.Anything, mock.MatchedBy(func(params *pe.ProductListQueryParams) bool {
 			return reflect.DeepEqual(params, expectedParams)
 		})).Return(sampleProducts, nil).Once()
 
@@ -192,7 +192,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		var responseProducts []*pe.Product
+		var responseProducts []*pdto.ProductResponse
 		err := json.Unmarshal(w.Body.Bytes(), &responseProducts)
 		require.NoError(t, err)
 		assert.Len(t, responseProducts, 2)
@@ -202,7 +202,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should return 200 OK and empty list if no products found by service", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), mock.MatchedBy(func(params *pe.ProductListQueryParams) bool {
+		mockService.On("GetListOfProducts", mock.Anything, mock.MatchedBy(func(params *pe.ProductListQueryParams) bool {
 			return reflect.DeepEqual(params, expectedParams)
 		})).Return([]*pe.Product{}, nil).Once()
 
@@ -211,7 +211,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		var responseProducts []*pe.Product
+		var responseProducts []*pdto.ProductResponse
 		err := json.Unmarshal(w.Body.Bytes(), &responseProducts)
 		require.NoError(t, err)
 		assert.Empty(t, responseProducts)
@@ -220,7 +220,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should return 200 OK and products with 'name' filter", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{Name: "Latte"}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return([]*pe.Product{product1}, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return([]*pe.Product{product1}, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?name=Latte", nil)
 		w := httptest.NewRecorder()
@@ -236,7 +236,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should return 200 OK and products with 'limit' and 'offset' pagination", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{Limit: 1, Offset: 1}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return([]*pe.Product{product2}, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return([]*pe.Product{product2}, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?limit=1&offset=1", nil)
 		w := httptest.NewRecorder()
@@ -279,7 +279,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 	t.Run("should return 400 Bad Request if service returns ErrInvalidInput (offset < 0)", func(t *testing.T) {
 		// Simulate a case where handler parses a valid integer, but service considers it invalid (e.g., negative).
 		expectedParams := &pe.ProductListQueryParams{Limit: 10, Offset: -1}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(nil, errors.New("offset cannot be negative: "+apperrors.ErrInvalidInput.Error())).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(nil, errors.New("offset cannot be negative: "+apperrors.ErrInvalidInput.Error())).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?limit=10&offset=-1", nil)
 		w := httptest.NewRecorder()
@@ -295,7 +295,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should return 500 Internal Server Error for other unexpected service errors", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(nil, errors.New("unexpected database connection error")).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(nil, errors.New("unexpected database connection error")).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product", nil)
 		w := httptest.NewRecorder()
@@ -309,9 +309,10 @@ func TestProductHandler_ListProducts(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
+	// todo: Failing test
 	t.Run("should parse 'include_deleted' correctly as true", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{IncludeDeleted: true}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(sampleProducts, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(sampleProducts, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?include_deleted=true", nil)
 		w := httptest.NewRecorder()
@@ -323,7 +324,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should parse 'include_deleted' correctly as false", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{IncludeDeleted: false}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(sampleProducts, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(sampleProducts, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?include_deleted=false", nil)
 		w := httptest.NewRecorder()
@@ -348,7 +349,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 
 	t.Run("should parse 'sort_by' and 'sort_order' correctly", func(t *testing.T) {
 		expectedParams := &pe.ProductListQueryParams{SortBy: "price", SortOrder: "desc"}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(sampleProducts, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(sampleProducts, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?sort_by=price&sort_order=desc", nil)
 		w := httptest.NewRecorder()
@@ -362,7 +363,7 @@ func TestProductHandler_ListProducts(t *testing.T) {
 		catID1 := uuid.New()
 		catID2 := uuid.New()
 		expectedParams := &pe.ProductListQueryParams{CategoryIDs: []uuid.UUID{catID1, catID2}}
-		mockService.On("GetListOfProducts", mock.AnythingOfType("*context.emptyCtx"), expectedParams).Return(sampleProducts, nil).Once()
+		mockService.On("GetListOfProducts", mock.Anything, expectedParams).Return(sampleProducts, nil).Once()
 
 		req, _ := http.NewRequest(http.MethodGet, "/product?category_id="+catID1.String()+"&category_id="+catID2.String(), nil)
 		w := httptest.NewRecorder()

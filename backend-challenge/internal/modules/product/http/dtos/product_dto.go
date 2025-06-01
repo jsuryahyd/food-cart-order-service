@@ -14,7 +14,6 @@ type ProductResponse struct {
 	Price     float64   `json:"price"`
 	Category  string    `json:"category"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 	IsActive  bool      `json:"is_active"`
 }
 

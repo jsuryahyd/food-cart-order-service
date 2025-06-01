@@ -39,7 +39,7 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	if migrationErr := db.RunMigrations(dbURL, "file://db/migrations", logger); migrationErr != nil {
 		return nil, migrationErr
 	}
-	if config.misc.should_seed_data || config.Environment == "development" || config.Environment == "test" {
+	if config.Misc.ShouldSeedData || config.Environment == "development" || config.Environment == "test" {
 		logger.Info("Running seed data for development environment...")
 		if err := db.TruncateTables(ctx, dbConn, logger); err != nil {
 			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
