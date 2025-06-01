@@ -1,4 +1,3 @@
-// internal/modules/product/service/product_service.go (Updated)
 package service
 
 import (

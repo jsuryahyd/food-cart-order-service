@@ -1,4 +1,3 @@
-// internal/modules/product/service/product_service_test.go
 package service_test
 
 import (

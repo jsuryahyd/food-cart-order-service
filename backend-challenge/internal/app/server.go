@@ -10,6 +10,9 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/db"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
+	producthandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http"
+	"github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository"
+	"github.com/jsuryahyd/food-cart-order-service/internal/modules/product/service"
 )
 
 type Application struct {
@@ -36,15 +39,15 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	if migrationErr := db.RunMigrations(dbURL, "file://db/migrations", logger); migrationErr != nil {
 		return nil, migrationErr
 	}
-	// if config.Environment == "development" || config.Environment == "test" {
-	// 	logger.Info("Running seed data for development environment...")
-	// 	if err := db.TruncateTables(ctx, dbConn, logger); err != nil {
-	// 		return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
-	// 	}
-	// 	if err := db.SeedData(ctx, dbConn, logger); err != nil {
-	// 		logger.Fatal("Failed to seed database", err)
-	// 	}
-	// }
+	if config.misc.should_seed_data || config.Environment == "development" || config.Environment == "test" {
+		logger.Info("Running seed data for development environment...")
+		if err := db.TruncateTables(ctx, dbConn, logger); err != nil {
+			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
+		}
+		if err := db.SeedData(ctx, dbConn, logger); err != nil {
+			logger.Fatal("Failed to seed database", err)
+		}
+	}
 
 	router := gin.New()
 
@@ -60,6 +63,15 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	router.Static("/scalar", "./web/scalar")
 	router.StaticFile("/openapi.yaml", "./api/openapi.yaml")
 
+	apiGroup := router.Group("/api")
+	{
+		// Product
+		repository := repository.NewProductRepository(dbConn)
+		productService := service.NewProductService(repository) // Ensure NewProductService accepts *sql.DB or required dependencies
+		productHandler := producthandler.NewProductHandler(productService)
+		apiGroup.GET("/product/:productId", productHandler.GetProductByID)
+		apiGroup.GET("/product", productHandler.ListProducts)
+	}
 	//todo: register routes
 	//todo: initiate redis
 

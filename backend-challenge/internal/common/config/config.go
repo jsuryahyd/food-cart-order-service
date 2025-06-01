@@ -15,6 +15,7 @@ type Config struct {
 	TestDB      TestDBConfig   `mapstructure:"testdb"`
 	Redis       RedisConfig    `mapstructure:"redis"`
 	ApiKeys     ApiKeysConfig  `mapstructure:"api_keys"`
+	Misc        interface{}    `mapstructure:"misc"`
 }
 
 type ServerConfig struct {
@@ -81,6 +82,9 @@ func LoadConfig(configFilePath string) (*Config, error) {
 
 	if err := v.BindEnv("api_keys.admin_api_key", "ADMIN_API_KEY"); err != nil {
 		fmt.Fprintf(os.Stderr, "WARN: Failed to bind ADMIN_API_KEY env var: %v\n", err)
+	}
+	if err := v.BindEnv("misc.should_seed_data", "SHOULD_SEED_DATA"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind Should Seed data env var: %v\n", err)
 	}
 
 	if err := v.ReadInConfig(); err != nil {
