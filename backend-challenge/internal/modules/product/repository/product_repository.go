@@ -7,8 +7,12 @@ import (
 	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities"
 )
 
+type Options struct {
+	IncludeDeleted bool
+}
+
 type ProductRepository interface {
-	GetProductByID(ctx context.Context, id uuid.UUID) (*pe.Product, error)
+	GetProductByID(ctx context.Context, id uuid.UUID, options Options) (*pe.Product, error)
 
 	GetListOfProducts(ctx context.Context, params *pe.ProductListQueryParams) ([]*pe.Product, error)
 

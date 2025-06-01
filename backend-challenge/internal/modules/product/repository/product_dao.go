@@ -7,26 +7,31 @@ import (
 	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities"
 )
 
-type CategoryDetails struct {
-	Id   uuid.UUID `db:"id"`
-	Name string    `db:"name"`
-}
+// type Category struct {
+// 	Id   uuid.UUID `db:"id"`
+// 	Name string    `db:"name"`
+// }
 
 type ProductDAO struct {
-	ID        uuid.UUID       `db:"id"`
-	Name      string          `db:"name"`
-	Price     float64         `db:"price"`
-	Category  CategoryDetails `db:"category"`
-	CreatedAt time.Time       `db:"created_at"`
-	UpdatedAt time.Time       `db:"updated_at"`
-	DeletedAt time.Time       `db:"deleted_at"`
+	ID    uuid.UUID `db:"id"`
+	Name  string    `db:"name"`
+	Price float64   `db:"price"`
+	// Category  Category   `db:"-"` //todo: figure out mapping joins to nested structs
+	CategoryId   uuid.UUID  `db:"category_id"`
+	CategoryName string     `db:"category_name"`
+	CreatedAt    time.Time  `db:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at"`
+	DeletedAt    *time.Time `db:"deleted_at"` //ptr used to allow null (nil) values
 }
 
 func (p *ProductDAO) ToDomainModel() *pe.Product {
 	if p == nil {
 		return nil
 	}
-
+	isActive := true
+	if p.DeletedAt != nil {
+		isActive = p.DeletedAt.IsZero()
+	}
 	return &pe.Product{
 		Id:    p.ID,
 		Name:  p.Name,
@@ -34,9 +39,9 @@ func (p *ProductDAO) ToDomainModel() *pe.Product {
 		Category: struct {
 			Id   uuid.UUID
 			Name string
-		}{p.Category.Id, p.Category.Name},
+		}{Id: p.CategoryId, Name: p.CategoryName},
 		CreatedAt: p.CreatedAt,
-		IsActive:  p.DeletedAt.IsZero(),
+		IsActive:  isActive,
 	}
 }
 

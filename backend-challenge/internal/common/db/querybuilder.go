@@ -7,7 +7,6 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/labstack/gommon/log"
 )
 
 // QueryBuilder wraps squirrel.StatementBuilderType and provides a DB handle
@@ -18,6 +17,11 @@ type QueryBuilder struct {
 }
 
 type Eq = squirrel.Eq
+type NotEq = squirrel.NotEq
+
+type Sqlizer = squirrel.Sqlizer
+
+type And = squirrel.And
 
 // NewQueryBuilder creates a new QueryBuilder with the given sqlx.DB
 func NewQueryBuilder(db *sql.DB) *QueryBuilder {
@@ -49,7 +53,7 @@ func (qb *QueryBuilder) DeleteBuilder(table string) squirrel.DeleteBuilder {
 }
 
 // Exec executes a query built with squirrel and returns sql.Result
-func (qb *QueryBuilder) Exec(ctx context.Context, builder squirrel.Sqlizer) (sql.Result, error) {
+func (qb *QueryBuilder) Exec(ctx context.Context, builder Sqlizer) (sql.Result, error) {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build SQL: %w", err)
@@ -58,7 +62,7 @@ func (qb *QueryBuilder) Exec(ctx context.Context, builder squirrel.Sqlizer) (sql
 }
 
 // QueryRowx runs a query and returns a single row (sqlx.Row)
-func (qb *QueryBuilder) QueryRowx(ctx context.Context, builder squirrel.Sqlizer) *sqlx.Row {
+func (qb *QueryBuilder) QueryRowx(ctx context.Context, builder Sqlizer) *sqlx.Row {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return qb.DB.QueryRowxContext(ctx, "SELECT 1 WHERE 1=0") // always error
@@ -67,7 +71,7 @@ func (qb *QueryBuilder) QueryRowx(ctx context.Context, builder squirrel.Sqlizer)
 }
 
 // Queryx runs a query and returns multiple rows (sqlx.Rows)
-func (qb *QueryBuilder) Queryx(ctx context.Context, builder squirrel.Sqlizer) (*sqlx.Rows, error) {
+func (qb *QueryBuilder) Queryx(ctx context.Context, builder Sqlizer) (*sqlx.Rows, error) {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build SQL: %w", err)
@@ -76,10 +80,11 @@ func (qb *QueryBuilder) Queryx(ctx context.Context, builder squirrel.Sqlizer) (*
 }
 
 // Get is a helper for SELECT ... LIMIT 1 into dest
-func (qb *QueryBuilder) Get(ctx context.Context, dest interface{}, builder squirrel.Sqlizer) error {
+func (qb *QueryBuilder) Get(ctx context.Context, dest interface{}, builder Sqlizer) error {
 	query, args, err := builder.ToSql()
+
 	if err != nil {
-		return fmt.Errorf("failed to build SQL: %w", err)
+		return fmt.Errorf("failed to build SQL: %s %w", query, err)
 	}
 	return qb.DB.GetContext(ctx, dest, query, args...)
 }
@@ -93,9 +98,9 @@ func (qb *QueryBuilder) Get(ctx context.Context, dest interface{}, builder squir
 //       return fmt.Errorf("Select: dest must be a pointer to a slice, got %T", dest)
 //   }
 */
-func (qb *QueryBuilder) Select(ctx context.Context, dest interface{}, builder squirrel.Sqlizer) error {
+func (qb *QueryBuilder) Select(ctx context.Context, dest interface{}, builder Sqlizer) error {
 	query, args, err := builder.ToSql()
-	log.Infof("select query : %s %v", query, args)
+
 	if err != nil {
 		return fmt.Errorf("failed to build SQL: %s %w", query, err)
 	}
