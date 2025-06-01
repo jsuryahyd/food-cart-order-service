@@ -12,9 +12,9 @@ type Options struct {
 }
 
 type ProductRepository interface {
-	GetProductByID(ctx context.Context, id uuid.UUID, options Options) (*pe.Product, error)
+	GetProductByID(ctx context.Context, id uuid.UUID, options Options) (*ProductDAO, error)
 
-	GetListOfProducts(ctx context.Context, params *pe.ProductListQueryParams) ([]*pe.Product, error)
+	GetListOfProducts(ctx context.Context, params *pe.ProductListQueryParams) ([]*ProductDAO, error)
 
 	// Not needed for the task
 	// CreateProduct(ctx context.Context, product *model.Product) error
