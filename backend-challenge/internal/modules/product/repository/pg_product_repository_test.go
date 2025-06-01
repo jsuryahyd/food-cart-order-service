@@ -11,6 +11,7 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/db"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/testutil"
+	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities"
 	pr "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,6 +45,9 @@ func SetupTest(t *testing.T) {
 
 	})
 }
+
+// todo: alternatively, setup test only once, and use transactions for each sub test
+// or, use a sql mock library (like go-sqlmock) for testing struct mapping and filters applied.
 
 func seedData(t *testing.T, ctx context.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -108,7 +112,7 @@ func Test_GetProductByID(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("should return (correct) product Id if exists", func(t *testing.T) {
-		seedData(t, ctx) //todo: alternatively, setup test only once, and use transactions for each sub test
+		seedData(t, ctx)
 		selectedProduct := products[1]
 		selectedCategory := categories[0] //in the above mocks these are associated.
 		product, err := productRepo.GetProductByID(ctx, selectedProduct["id"].(uuid.UUID), pr.Options{})
@@ -179,4 +183,165 @@ func Test_GetProductByID(t *testing.T) {
 		require.ErrorIs(t, err, sql.ErrNoRows)
 	})
 
+}
+
+func Test_GetListOfProducts(t *testing.T) {
+	SetupTest(t)
+	ctx := context.Background()
+
+	t.Run("returns multiple products with pagination", func(t *testing.T) {
+		seedData(t, ctx)
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "",
+			CategoryIDs:    nil,
+			SortBy:         "",
+			SortOrder:      "",
+			Limit:          2,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, 2)
+	})
+
+	t.Run("returns empty slice if no products", func(t *testing.T) {
+		// Truncate all tables to ensure no products
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		err := db.TruncateTables(ctx, testDBConn, logger)
+		require.NoError(t, err)
+
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "",
+			CategoryIDs:    nil,
+			SortBy:         "",
+			SortOrder:      "",
+			Limit:          10,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, 0)
+	})
+
+	t.Run("filters by name", func(t *testing.T) {
+		seedData(t, ctx)
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "Product A",
+			CategoryIDs:    nil,
+			SortBy:         "",
+			SortOrder:      "",
+			Limit:          10,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, 1)
+		assert.Equal(t, "Product A", productsList[0].Name)
+
+		// non matching name
+		params.Name = "axlkjpoaidf"
+		productsList, err = productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, 0)
+	})
+
+	t.Run("filters by category IDs", func(t *testing.T) {
+		seedData(t, ctx)
+		catID := categories[0]["id"].(uuid.UUID)
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "",
+			CategoryIDs:    []uuid.UUID{catID},
+			SortBy:         "",
+			SortOrder:      "",
+			Limit:          10,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		// Extract expected product IDs with catID from the seeded products
+		var expectedIDs []uuid.UUID
+		for _, prod := range products {
+			if prod["categoryId"] == catID {
+				expectedIDs = append(expectedIDs, prod["id"].(uuid.UUID))
+			}
+		}
+		var returnedIDs []uuid.UUID
+		for _, p := range productsList {
+			returnedIDs = append(returnedIDs, p.ID)
+		}
+		assert.ElementsMatch(t, expectedIDs, returnedIDs)
+	})
+
+	t.Run("applies sorting and pagination", func(t *testing.T) {
+		seedData(t, ctx)
+		limit := 2
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "",
+			CategoryIDs:    nil,
+			SortBy:         "name",
+			SortOrder:      "desc",
+			Limit:          limit,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, limit)
+		assert.Equal(t, productsList[0].Name, products[2]["name"])
+		assert.Equal(t, productsList[1].Name, products[1]["name"])
+
+		params.SortOrder = "asc"
+		productsListAsc, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, limit)
+		assert.Equal(t, productsListAsc[0].Name, products[0]["name"])
+		assert.Equal(t, productsListAsc[1].Name, products[1]["name"])
+	})
+
+	t.Run("returns deleted products if IncludeDeleted is true", func(t *testing.T) {
+		seedData(t, ctx)
+		now := time.Now()
+		prodID := products[0]["id"].(uuid.UUID)
+		// Soft delete one product
+		_, err := testDBConn.ExecContext(ctx, "UPDATE products SET deleted_at = $1 WHERE id = $2", now, prodID)
+		require.NoError(t, err)
+
+		params := &pe.ProductListQueryParams{
+			IncludeDeleted: false,
+			Name:           "",
+			CategoryIDs:    nil,
+			SortBy:         "",
+			SortOrder:      "",
+			Limit:          10,
+			Offset:         0,
+		}
+		productsList, err := productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, len(products)-1)
+		found := false
+		for _, p := range productsList {
+			if p.ID == prodID {
+				found = true
+			}
+		}
+		assert.False(t, found)
+
+		params.IncludeDeleted = true
+		productsList, err = productRepo.GetListOfProducts(ctx, params)
+		require.NoError(t, err)
+		assert.Len(t, productsList, len(products))
+		found = false
+		for _, p := range productsList {
+			if p.ID == prodID {
+				found = true
+				assert.NotNil(t, p.DeletedAt)
+			}
+		}
+		assert.True(t, found)
+	})
 }

@@ -7,10 +7,12 @@ type ProductListQueryParams struct {
 	Offset int
 
 	CategoryIDs []uuid.UUID
-	ProductName string
+	Name        string
 
 	SortBy    string
 	SortOrder string
+
+	IncludeDeleted bool
 }
 
 func NewProductListQueryParams() *ProductListQueryParams {
@@ -42,7 +44,7 @@ func (qp *ProductListQueryParams) AddCategoryIDs(categoryIDs []uuid.UUID) *Produ
 }
 func (qp *ProductListQueryParams) AddProductName(name string) *ProductListQueryParams {
 	if len(name) > 0 {
-		qp.ProductName = name
+		qp.Name = name
 	}
 	return qp
 }

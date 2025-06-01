@@ -20,7 +20,7 @@ type Eq = squirrel.Eq
 type NotEq = squirrel.NotEq
 
 type Sqlizer = squirrel.Sqlizer
-
+type ILike = squirrel.ILike
 type And = squirrel.And
 
 // NewQueryBuilder creates a new QueryBuilder with the given sqlx.DB
@@ -100,7 +100,7 @@ func (qb *QueryBuilder) Get(ctx context.Context, dest interface{}, builder Sqliz
 */
 func (qb *QueryBuilder) Select(ctx context.Context, dest interface{}, builder Sqlizer) error {
 	query, args, err := builder.ToSql()
-
+	fmt.Printf("running Query: %s | args: %v", query, args)
 	if err != nil {
 		return fmt.Errorf("failed to build SQL: %s %w", query, err)
 	}
