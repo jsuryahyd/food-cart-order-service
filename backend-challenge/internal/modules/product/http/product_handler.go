@@ -12,6 +12,7 @@ import (
 	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/errors"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities"
+	productdto "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http/dtos"
 	pr "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository"
 )
 
