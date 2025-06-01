@@ -1,4 +1,4 @@
-package db_setup
+package db
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
-// In internal/common/db_setup/seed.go or a new utility file
+// In internal/common/db/seed.go or a new utility file
 func TruncateTables(ctx context.Context, db *sql.DB, logger *logging.Logger) error {
 	logger.Info("Truncating tables before seeding...")
 	// Order matters due to foreign key constraints (truncate children first)

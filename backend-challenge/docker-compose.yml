@@ -29,12 +29,24 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: user
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432" # Expose for local DB access
     volumes:
       - db_data:/var/lib/postgresql/data # Persistent data volume
+
+  db-test:
+    container_name: "order-service-test-database"
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${TEST_DB_NAME}
+      POSTGRES_USER: ${TEST_DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PORT: ${TEST_DB_PORT}
+    ports:
+      - "5433:5432" # Expose for local DB access
+
 
   # redis:
   #   image: redis:7-alpine

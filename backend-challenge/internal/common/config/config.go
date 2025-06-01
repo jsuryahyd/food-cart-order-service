@@ -12,6 +12,7 @@ type Config struct {
 	Environment string         `mapstructure:"environment"`
 	Server      ServerConfig   `mapstructure:"server"`
 	Database    DatabaseConfig `mapstructure:"database"`
+	TestDB      TestDBConfig   `mapstructure:"testdb"`
 	Redis       RedisConfig    `mapstructure:"redis"`
 	ApiKeys     ApiKeysConfig  `mapstructure:"api_keys"`
 }
@@ -24,6 +25,18 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
+	Host            string        `mapstructure:"host"`
+	Port            int16         `mapstructure:"port"`
+	User            string        `mapstructure:"user"`
+	Password        string        `mapstructure:"password"`
+	DbName          string        `mapstructure:"db_name"`
+	Sslmode         string        `mapstructure:"sslmode"`
+	MaxConns        int8          `mapstructure:"max_conns"`
+	MinConns        int8          `mapstructure:"min_conns"`
+	ConnMaxLifeTime time.Duration `mapstructure:"conn_max_lifetime"`
+}
+
+type TestDBConfig struct {
 	Host            string        `mapstructure:"host"`
 	Port            int16         `mapstructure:"port"`
 	User            string        `mapstructure:"user"`
@@ -82,8 +95,6 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	if err := v.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config %v %w", v, err)
 	}
-
-	fmt.Println(&config)
 
 	return &config, nil
 

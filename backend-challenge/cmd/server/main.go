@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/jsuryahyd/food-cart-order-service/internal/app"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
 )
@@ -16,7 +17,12 @@ func main() {
 
 	appCtx := context.Background()
 
-	cfg, err := config.LoadConfig("configs/config.yaml")
+	_ = godotenv.Load()
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "configs/config.yaml"
+	}
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Fatal("Failed to load config on server starup %w", err)
 		return

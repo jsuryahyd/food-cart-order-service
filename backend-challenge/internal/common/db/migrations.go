@@ -1,4 +1,4 @@
-package db_setup
+package db
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
-func RunMigrations(dbURL string, logger *logging.Logger) error {
-	m, err := migrate.New("file://db/migrations", dbURL)
+func RunMigrations(dbURL string, fileURL string, logger *logging.Logger) error {
+	m, err := migrate.New(fileURL, dbURL)
 	if err != nil {
 		return fmt.Errorf("failed to init migration %w", err)
 	}

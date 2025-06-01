@@ -10,7 +10,7 @@
 - Security: [Not implementing]
 	- audit docker image
 	- audit go dependancies
-
+- errors
 
 ## Implement APIs with TDD, covering all the edge cases.
 
@@ -20,9 +20,10 @@
 - validate pagination values - 0 < pageSize < 100; page >= 0
 - Happy path: return list with pagination
 - Add Filter query params for name and categoryId (migrate to create categories table)
+- Add sort params by name
 - Test for empty array if db is empty. (status=200)
 - Test for 500 errors
-
+- Ratelimit
 ### GET Product api
 - No auth
 - No middleware
@@ -30,7 +31,7 @@
 - Happy path: return product details
 - Test for non-existent id (status=404)
 - Test for 500 errors
-
+- Ratelimit
 ### POST Create Order api
 - Authenticate with middleware
 - Validate schema
@@ -40,7 +41,7 @@
 	- validate couponcode
 		- check from redis cache
 		- on Cache-Miss, read from valid coupons list file.
-
+- Ratelimit
 ### PUT Update cache api
 - authenticate with middleware using admin api key
 - read from processed-coupons and update cache

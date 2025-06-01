@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
-	"github.com/jsuryahyd/food-cart-order-service/internal/common/db_setup"
+	"github.com/jsuryahyd/food-cart-order-service/internal/common/db"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 )
 
@@ -27,19 +27,21 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		config.Database.User, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.DbName)
 
-	dbConn, dbErr := db_setup.GetConnection(dbURL, logger)
+	dbConn, dbErr := db.GetConnection(dbURL, logger)
 	if dbErr != nil {
 		return nil, dbErr
 	}
-	if migrationErr := db_setup.RunMigrations(dbURL, logger); migrationErr != nil {
+
+	//todo: move path to env variable
+	if migrationErr := db.RunMigrations(dbURL, "file://db/migrations", logger); migrationErr != nil {
 		return nil, migrationErr
 	}
 	// if config.Environment == "development" || config.Environment == "test" {
 	// 	logger.Info("Running seed data for development environment...")
-	// 	if err := db_setup.TruncateTables(ctx, dbConn, logger); err != nil {
+	// 	if err := db.TruncateTables(ctx, dbConn, logger); err != nil {
 	// 		return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
 	// 	}
-	// 	if err := db_setup.SeedData(ctx, dbConn, logger); err != nil {
+	// 	if err := db.SeedData(ctx, dbConn, logger); err != nil {
 	// 		logger.Fatal("Failed to seed database", err)
 	// 	}
 	// }
