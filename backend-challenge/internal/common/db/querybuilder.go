@@ -23,6 +23,8 @@ type Sqlizer = squirrel.Sqlizer
 type ILike = squirrel.ILike
 type And = squirrel.And
 
+// PlaceholderDollar := squirrel.Dollar
+
 // NewQueryBuilder creates a new QueryBuilder with the given sqlx.DB
 func NewQueryBuilder(db *sql.DB) *QueryBuilder {
 	sqlxDB := sqlx.NewDb(db, "postgres")

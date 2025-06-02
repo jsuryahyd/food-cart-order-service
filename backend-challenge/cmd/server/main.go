@@ -19,6 +19,7 @@ func main() {
 
 	_ = godotenv.Load()
 	configPath := os.Getenv("CONFIG_PATH")
+
 	if configPath == "" {
 		configPath = "configs/config.yaml"
 	}

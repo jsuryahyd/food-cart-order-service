@@ -20,8 +20,8 @@ CREATE TABLE products (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create the stock_inventory table
-CREATE TABLE stock_inventory (
+-- Create the product_stock table
+CREATE TABLE product_stock (
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL CHECK (quantity >= 0),
     PRIMARY KEY (product_id)
@@ -50,3 +50,4 @@ CREATE TABLE order_items (
 -- Indexes for performance
 CREATE INDEX idx_products_category ON products (category);
 CREATE INDEX idx_orders_user_id ON orders (user_id);
+CREATE INDEX idx_order_id_on_order_items ON order_items (order_id);

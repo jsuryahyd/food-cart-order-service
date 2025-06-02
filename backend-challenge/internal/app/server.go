@@ -7,12 +7,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	session "github.com/jsuryahyd/food-cart-order-service/internal/common/auth"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/db"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
+	orderhandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/order/http"
+	orderrepository "github.com/jsuryahyd/food-cart-order-service/internal/modules/order/repository"
+	orderservice "github.com/jsuryahyd/food-cart-order-service/internal/modules/order/service"
 	producthandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http"
 	"github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository"
 	"github.com/jsuryahyd/food-cart-order-service/internal/modules/product/service"
+	userrepository "github.com/jsuryahyd/food-cart-order-service/internal/modules/user/repository"
 )
 
 type Application struct {
@@ -45,7 +50,7 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 			return nil, fmt.Errorf("failed to truncate tables before seeding: %w", err)
 		}
 		if err := db.SeedData(ctx, dbConn, logger); err != nil {
-			logger.Fatal("Failed to seed database", err)
+			logger.Fatalf("Failed to seed database %+v", err)
 		}
 	}
 
@@ -67,12 +72,18 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	{
 		// Product
 		repository := repository.NewProductRepository(dbConn)
-		productService := service.NewProductService(repository) // Ensure NewProductService accepts *sql.DB or required dependencies
+		productService := service.NewProductService(repository)
 		productHandler := producthandler.NewProductHandler(productService)
 		apiGroup.GET("/product/:productId", productHandler.GetProductByID)
 		apiGroup.GET("/product", productHandler.ListProducts)
 	}
-	//todo: register routes
+	{
+		// Order setup
+		ordRepository := orderrepository.NewOrderRepository(dbConn)
+		ordService := orderservice.NewOrderService(ordRepository, repository.NewProductRepository(dbConn), orderrepository.NewPgStockRepository(dbConn), dbConn)
+		ordHandler := orderhandler.NewOrderHandler(ordService)
+		apiGroup.POST("/order", session.AuthMiddleware(config, userrepository.NewUserRepository(dbConn), logging.GetLogger().With("middleware", "AuthMiddleware")), ordHandler.PlaceOrder)
+	}
 	//todo: initiate redis
 
 	server := &http.Server{

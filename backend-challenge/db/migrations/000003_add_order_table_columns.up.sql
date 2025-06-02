@@ -1,0 +1,2 @@
+
+ALTER TABLE orders ADD COLUMN user_id REFERENCES users(id) ON DELETE RESTRICT;
