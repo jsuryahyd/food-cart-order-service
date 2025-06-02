@@ -25,6 +25,11 @@ testdb:
   max_conns: 10
   min_conns: 5
   conn_max_lifetime: 5m
+coupon_preprocessor:
+  COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
+  COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
+  COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
+  OUTPUT_FILE_PATH: /output/processed_coupons.txt
 redis:
   host: "localhost"
   port: 6379

@@ -21,8 +21,8 @@
 - Response Headers
 - validate pagination values - 0 < pageSize < 100; page >= 0
 - Happy path: return list with pagination
-- Add Filter query params for name and categoryId (migrate to create categories table)
-- Add sort params by name
+- ~~Add Filter query params for name and categoryId (migrate to create categories table)~~
+- ~~Add sort params by name~~
 - Test for empty array if db is empty. (status=200)
 - Test for 500 errors
 - Ratelimit
@@ -66,3 +66,7 @@
 - read files to generate a `map[string]int`, where 8 <= len(key) <= 10 && map[key] >= 2
 - store the keys in to a new `processed_coupons.txt` on to shared volume
 - call an api to main server to refresh redis cache (alternatively, main server can listen to change event on processed_coupon.txt with inotify)
+- **Challenges**
+	- Each file is around 1GB in size. Job must not go out of memory.
+	- Should not effect the application Startup time.
+	- 

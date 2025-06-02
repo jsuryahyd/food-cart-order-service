@@ -1,5 +1,3 @@
-# Dockerfile.app
-
 # Stage 1: Build the Go application
 FROM golang:1.23-bookworm AS builder
 

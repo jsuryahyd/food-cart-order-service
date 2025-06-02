@@ -9,13 +9,14 @@ import (
 )
 
 type Config struct {
-	Environment string         `mapstructure:"environment"`
-	Server      ServerConfig   `mapstructure:"server"`
-	Database    DatabaseConfig `mapstructure:"database"`
-	TestDB      TestDBConfig   `mapstructure:"testdb"`
-	Redis       RedisConfig    `mapstructure:"redis"`
-	ApiKeys     ApiKeysConfig  `mapstructure:"api_keys"`
-	Misc        MiscConfig     `mapstructure:"misc"`
+	Environment     string                `mapstructure:"environment"`
+	Server          ServerConfig          `mapstructure:"server"`
+	Database        DatabaseConfig        `mapstructure:"database"`
+	TestDB          TestDBConfig          `mapstructure:"testdb"`
+	Redis           RedisConfig           `mapstructure:"redis"`
+	ApiKeys         ApiKeysConfig         `mapstructure:"api_keys"`
+	CouponProcessor CouponProcessorConfig `mapstructure:"coupon_preprocessor"`
+	Misc            MiscConfig            `mapstructure:"misc"`
 }
 
 type ServerConfig struct {
@@ -57,6 +58,13 @@ type RedisConfig struct {
 
 type ApiKeysConfig struct {
 	AdminKey string `mapstructure:"admin_api_key"`
+}
+
+type CouponProcessorConfig struct {
+	COUPON_FILE1_URL string
+	COUPON_FILE2_URL string
+	COUPON_FILE3_URL string
+	OUTPUT_FILE_PATH string
 }
 
 type MiscConfig struct {
