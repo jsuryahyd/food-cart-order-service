@@ -3,6 +3,8 @@ package entities
 import "github.com/google/uuid"
 
 type ProductListQueryParams struct {
+	Ids []uuid.UUID
+
 	Limit  int
 	Offset int
 

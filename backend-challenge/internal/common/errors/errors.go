@@ -21,7 +21,7 @@ var (
 
 var (
 	ErrInsufficientStock       = errors.New("insufficient stock")
-	ErrProductsNotFound        = errors.New("One of more products are not found")
+	ErrProductsNotFound        = errors.New("One or more products are not found")
 	ErrInternalServerForOrders = errors.New("An unexpected error occurred while placing the order.")
 )
 
@@ -30,6 +30,7 @@ var userMessages = map[error]string{
 	ErrInsufficientStock: "Sorry, there is not enough stock for one or more products.",
 	ErrNotFound:          "The requested item was not found.",
 	ErrUnauthorized:      "You are not authorized to access this resource.",
+	ErrProductsNotFound:  "One or more of the requested products are not found",
 }
 
 func UserMessage(err error) string {

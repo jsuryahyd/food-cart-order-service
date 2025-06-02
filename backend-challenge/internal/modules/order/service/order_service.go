@@ -48,11 +48,11 @@ aquire lock on product rows, reduce the quantity of products, return errors for 
 */
 func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrderPayload) (*oe.Order, error) {
 	if payload == nil || len(payload.Items) == 0 {
-		return nil, fmt.Errorf("%w: order payload is missing items %v", payload.Items, apperrors.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: order payload is missing items %v", apperrors.ErrInvalidInput, payload.Items)
 	}
 
 	if payload.UserId == uuid.Nil {
-		return nil, fmt.Errorf("%w: order payload is missing User ID %v", payload.UserId, apperrors.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: order payload is missing User ID %s", apperrors.ErrInvalidInput, payload.UserId)
 	}
 
 	if len(payload.Items) == 0 {
@@ -60,7 +60,7 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrde
 	}
 	for _, item := range payload.Items {
 		if item.Quantity <= 0 {
-			return nil, fmt.Errorf("%w: item quantity for product %s must be positive", item.ProductId, apperrors.ErrInvalidInput)
+			return nil, fmt.Errorf("%w: item quantity for product %s must be positive", apperrors.ErrInvalidInput, item.ProductId)
 		}
 	}
 
@@ -97,7 +97,7 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrde
 		}
 	}()
 
-	// --- Business Logic within the Transaction ---
+	// ==== Business Logic is within the Transaction ====
 
 	// 1. Collect Product IDs to fetch details in batch
 	productIDs := make([]uuid.UUID, 0, len(payload.Items))
@@ -106,8 +106,7 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrde
 	}
 
 	// 2. Fetch product details (e.g., price, name)
-	// It's good to fetch product details within the transaction if their state (like price)
-	// needs to be consistent with the stock check.
+	// It's good to fetch product details within the transaction if their state (like price) needs to be consistent with the stock check.
 	productDetails, err := s.productRepo.GetListOfProductDetails(ctx, tx, productIDs)
 	if err != nil {
 		s.logger.Errorf("Failed to fetch product details in batch: %v", err)
@@ -115,8 +114,10 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrde
 		return nil, fmt.Errorf("could not retrieve product information: %w", err)
 	}
 	productDetailsMap := map[uuid.UUID]pr.ProductDAO{}
+	products := []*pe.Product{}
 	for _, p := range productDetails {
 		productDetailsMap[p.ID] = *p
+		products = append(products, p.ToDomainModel())
 	}
 
 	var orderItems []oe.OrderItem
@@ -181,6 +182,7 @@ func (s *OrderServiceImpl) PlaceOrder(ctx context.Context, payload *oe.PlaceOrde
 		Items:      orderItems,
 		Total:      finalAmount,
 		CouponCode: payload.CouponCode,
+		Products:   products,
 		Status:     "pending",        // Define order statuses in your entities
 		CreatedAt:  time.Now().UTC(), // Helper for time.Now().UTC() or similar
 		UpdatedAt:  time.Now().UTC(),

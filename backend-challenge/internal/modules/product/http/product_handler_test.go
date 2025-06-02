@@ -1,4 +1,3 @@
-// internal/modules/product/http_handler/product_handler_test.go
 package producthandler_test
 
 import (
@@ -17,10 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/errors"
-	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities" // Alias the handler package
+	pe "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/entities"
 	producthandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http"
-	pdto "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http/dtos"
-	pr "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository" // For pr.Options
+	pdto "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/http/dto"
+	pr "github.com/jsuryahyd/food-cart-order-service/internal/modules/product/repository"
 )
 
 // ==== Mock service implementation ====
