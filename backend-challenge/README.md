@@ -83,7 +83,7 @@
 	- API is authenticated, payload is validated, against formatting and stock availability. Transaction is used to create order and reduce quantity. 'FOR UPDATE' is used while reading rows for strict isolation.
 - **Promo Module**
 	- The module code is shared by two applications - [Server](cmd/server/main.go) and [Worker](cmd/worker/main.go). 
-	- Redis Pub/Sub is used to coordinate loading of coupons in to cache. An admin api `/admin/update-coupon-cache` simulates a coupon files updated message (say from s3 ), to which the server would send a trigger processing message to Pub/Sub(Message Queue). The Worker receives the message and creates the valid_coupons file, send a message to the Pub/Sub. The Server on receiving the message, refreshes its cache from the valid_coupons file.
+	- Redis Pub/Sub is used to coordinate loading of coupons in to cache. An admin api `/admin/update-coupon-cache` simulates a 'coupon files updated event' (say from s3), to which the server would send a trigger processing message to Pub/Sub(Message Queue). The Worker receives the message and creates the valid_coupons file, send a message to the Pub/Sub. The Server on receiving the message, refreshes its cache from the valid_coupons file.
 	- Redis Cache is used to store hot cache of coupons
 	- A processed indexed file (indexed for faster querying) is used as cold cache, which is accessed on cache-miss. The loaded coupon will now be added to hot cache. LRU eviction strategy is used. 
 	- Indexed file works well, and performant in this case, even compared to using a No SQL database like cassandra or Elastic Search which are overkill.
@@ -92,15 +92,17 @@
 
 ### Note: 
 #### Known Issues
-Due to Time constraint, Delivering the working solution is given preference in few areas over testing, coding style consistency, and log-level correctness
-Few coding style issues are yet to be addressed. These will continued to be fixed after assignment submission.
+Due to Time constraint, In a few areas delivering the working solution is given preference over testing, coding style consistency, and log-level correctness etc.
+Few coding style issues are to be addressed. These will continued to be fixed after assignment submission.
 - backend-challenge\internal\common\config\config.go has some inconsistent env loading that needs refactoring
 - order_service.go has direct sql access in order to orchestrate transaction(only repositories should work with database). This is common and acceptable, but I would like to use Unit Of Work pattern to avoid this.
 - Tests are pending for Order and promo modules
 - Few logs are logged as info, instead of debug.
 - sqlx struct mapping is used to read from DB, but row.scan() is used in few places directly.
 - Any other inconsistencies found are the most likely the result of working in isolation, time constraint and lack of automated CI/CD setup.
-
+- Building the images separately and running them separately sometimes causes database connection issues in api service. Needs to be investigated.
+#### API schema Confusion
+- The openapi.yml schema file present in the api/ folder of the original repository is different from the schema file linked in the [challenge](./challenge.md). I have followed the linked schema in the challenge. This schema does not return images in GET /Product api.
 ---
 - ### [Todo](./TODO.md)
 
