@@ -1,4 +1,4 @@
-## Project Setup
+## Project Setup✔️
 - ~~Create basic server~~
 - ~~Setup docker for the server~~
 - ~~Setup a logger~~
@@ -59,7 +59,7 @@
 - add a message to redis message queue
 - Tests
 
-### Coupon codes Pre processing
+### Coupon codes Pre processing✔️
 - A worker with separate entry point, running on separate container
 - poll the message queue for input file changes
 - Load files from s3 links given in [challenge.md](./challenge.md) (added as env variables in docker-compose)

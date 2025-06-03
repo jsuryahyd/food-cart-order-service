@@ -58,7 +58,7 @@
 	- Worker Job may require at most a RAM size upto 14 GB. Docker Desktop might be needed to configure to allow for higher memory allocation.
 	- Worker Job Requires processing 3 * 1GB files(~100M). Based on coupon validity requirements, At most 200M coupon tokens might have to be loaded on to a golang map object. (map object = 70-80 bytes per coupon * 200 M = 14GB)
 - Optimized Approach:✔️
-	- Optimized approach uses a tiered cache approach. A hot cache of 500K coupons (configurable) in to Redis (~50MB RAM). Remaining coupons on an indexed file, which allows for faster querying.
+	- Optimized approach uses a 2-tiered cache approach. A hot cache of 500K coupons (configurable) in to Redis (~50MB RAM). Remaining coupons on an indexed file, which allows for faster querying.
 	- The Pre-processing is still CPU Intensive. So, Higher memory and CPU allocation is added for the container in [docker-compose.yml](docker-compose.yml). However my local system still struggles with the actual files. Works fine with smaller file sizes.
 	- Requires further profiling.
 
@@ -71,7 +71,7 @@
 - viper for loading config
 - Scalar Web client for api testing
 - testify for assertions in testing
-- uuid for generating uuid at application level (rather than at DB level)
+- google/uuid for generating UUIDs at application level (rather than at DB level)
 
 ### Implementation Details
 - Go conventions are used for folder and package naming (smallcasenospace) and file naming (snake_case)
@@ -85,7 +85,8 @@
 	- The module code is shared by two applications - [Server](cmd/server/main.go) and [Worker](cmd/worker/main.go). 
 	- Redis Pub/Sub is used to coordinate loading of coupons in to cache. An admin api `/admin/update-coupon-cache` simulates a coupon files updated message (say from s3 ), to which the server would send a trigger processing message to Pub/Sub(Message Queue). The Worker receives the message and creates the valid_coupons file, send a message to the Pub/Sub. The Server on receiving the message, refreshes its cache from the valid_coupons file.
 	- Redis Cache is used to store hot cache of coupons
-	- A processed file (indexed for faster querying) is used as cold cache, which is accessed on cache-miss. The loaded coupon will now be added to hot cache. LRU eviction strategy is used.
+	- A processed indexed file (indexed for faster querying) is used as cold cache, which is accessed on cache-miss. The loaded coupon will now be added to hot cache. LRU eviction strategy is used. 
+	- Indexed file works well, and performant in this case, even compared to using a No SQL database like cassandra or Elastic Search which are overkill.
 
 
 
