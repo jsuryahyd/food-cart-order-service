@@ -1,6 +1,5 @@
-[Challenge](./challenge.md)
-<br/>
-<br/>
+### [Link to Challenge Description](./challenge.md)
+
 
 <h2  style="text-align: center;">Architecture</h2>
 
