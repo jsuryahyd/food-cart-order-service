@@ -124,8 +124,7 @@ func LoadConfig(configFilePath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config %v %w", v, err)
 	}
 
-	fmt.Printf("config before %+v", config)
-	fmt.Println("--", os.Getenv("REDIS_HOST"), os.Getenv("APP_REDIS_HOST"))
+	//todo: refactor to avoid overriding env vars
 	if os.Getenv("REDIS_HOST") != "" {
 		config.Redis.Host = os.Getenv("REDIS_HOST")
 	}
@@ -153,7 +152,6 @@ func LoadConfig(configFilePath string) (*Config, error) {
 			config.CouponProcessor.NumHotCouponsInCache = num
 		}
 	}
-	// fmt.Printf("config after %+v", config)
 
 	return &config, nil
 

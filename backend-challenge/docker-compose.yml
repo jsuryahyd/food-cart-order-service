@@ -76,9 +76,6 @@ services:
       COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
       COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
       COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
-      # COUPON_FILE1_URL: http://localhost:2025/file1.txt.gz
-      # COUPON_FILE2_URL: http://localhost:2025/file2.txt.gz
-      # COUPON_FILE3_URL: http://localhost:2025/file3.txt.gz
       OUTPUT_FILE_PATH: /output/processed_coupons.txt
       OUTPUT_INDEX_FILE_PATH: /output/processed_coupons.idx
       PROCESSED_COUPONS_FILE_PATH: /app/data/processed_coupons.txt
