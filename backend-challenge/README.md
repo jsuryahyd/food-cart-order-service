@@ -30,7 +30,7 @@
 
 ## Technology Choices
 - Golang for backend server and worker (Required)
-- Postgres - with squirrel query builder and sqlx query runner.
+- Postgres - with squirrel query builder and sqlx query runner.(avoiding ORM for the simple case)
 - Redis for Cache and as a message Queue(pub/sub)
 - Gin for router.
 - zap for logging
@@ -45,7 +45,7 @@
 - Port 8080 is required by the api server, can be changed in `./docker-compose.yml`
 - Open the url for scalar api client, served at `http://localhost:8080/scalar` for testing the apis.
 - Loading large files:
-	- The couponbase files are loaded directly from the s3 (links given in [challenge.md](./challenge.md)) during runtime(simulates production architecture). Downloading large files may take time and can cause repeated failures. So, for the demo purpose, better approach would be to serve these files locally (download the files and run a static server like` python -m http.server 8080`in the directory).
+	- The couponbase files are loaded directly from the s3 (links given in [challenge.md](./challenge.md)) during runtime(simulates production architecture). Downloading large files may take time and can cause repeated failures. So, for the demo purpose, better approach would be to serve these files locally (download the files and run a static server like` python -m http.server 2025`in the directory).
 	- Change the file urls env variables in docker-compose.yml to point to the local server
 		```.yml
 		# COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
@@ -65,7 +65,7 @@
 	- Worker Job Requires processing 3 * 1GB files(~100M). Based on coupon validity requirements, At most 200M coupon tokens might have to be loaded on to a golang map object. (map object = 70-80 bytes per coupon * 200 M = 14GB)
 - Optimized Approach:✔️
 	- Optimized approach uses a 2-tiered cache approach. A hot cache of 500K coupons (configurable) in to Redis (~50MB RAM). Remaining coupons on an indexed file, which allows for faster querying.
-	- The Pre-processing is still CPU Intensive. So, Higher memory and CPU allocation is added for the container in [docker-compose.yml](docker-compose.yml). However my local system still struggles with the actual files. Works fine with smaller file sizes.
+	- The Pre-processing is still CPU Intensive. So, Higher memory and CPU allocation is added for the container in [docker-compose.yml](docker-compose.yml). However my local system still struggles with the actual files. Works fine with smaller coupon file sizes.
 	- Requires further profiling.
 
 
