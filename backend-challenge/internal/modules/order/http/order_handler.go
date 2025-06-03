@@ -35,7 +35,7 @@ func NewOrderHandler(orderService OrderService, promoService promohandler.PromoS
 // POST /order endpoint
 func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 	var req dto.PlaceOrderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := BindStrictJSON(c, &req); err != nil {
 		h.logger.Errorf("Invalid request payload: %v" + err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   true,
@@ -71,9 +71,26 @@ func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 	}
 
 	if req.CouponCode != "" {
-		//todo: check length of the coupon and return early
-		_, err := h.promoService.ValidateCoupon(promoEntities.Coupon(req.CouponCode))
+
+		couponCodeLen := len(req.CouponCode)
+		if couponCodeLen > 0 && (couponCodeLen < 8 || couponCodeLen > 10) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   true,
+				"message": apperrors.UserMessage(apperrors.ErrInvalidCoupon),
+			})
+			return
+		}
+
+		isValid, err := h.promoService.ValidateCoupon(promoEntities.Coupon(req.CouponCode))
 		if err != nil {
+			h.logger.Errorf("error while validating coupon %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   true,
+				"message": apperrors.UserMessage(apperrors.ErrInternalServerForOrders), //custom message for the module
+			})
+			return
+		}
+		if !isValid {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   true,
 				"message": apperrors.UserMessage(apperrors.ErrInvalidCoupon),

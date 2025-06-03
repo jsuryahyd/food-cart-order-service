@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jsuryahyd/food-cart-order-service/internal/modules/promo/entities"
 )
 
 type CouponCache struct {
@@ -21,7 +20,7 @@ func NewCouponCache(client *redis.Client) *CouponCache {
 	}
 }
 
-func (c *CouponCache) IsCouponValid(couponCode entities.Coupon) (bool, error) {
+func (c *CouponCache) IsCouponValid(couponCode string) (bool, error) {
 	// Use SISMEMBER for a set, or EXISTS for individual keys.
 	cmd := c.redisClient.SIsMember(c.ctx, "valid_coupons", couponCode)
 	if cmd.Err() != nil {
@@ -34,7 +33,7 @@ func (c *CouponCache) IsCouponValid(couponCode entities.Coupon) (bool, error) {
 *
 - replaces the entire set of valid coupons in Redis. It clears existing coupons and adds new ones.
 */
-func (c *CouponCache) SetValidCoupons(coupons []entities.Coupon) error {
+func (c *CouponCache) SetValidCoupons(coupons []string) error {
 	pipe := c.redisClient.TxPipeline() // Use a transaction pipeline for atomicity
 
 	// Clear existing coupons
@@ -63,7 +62,7 @@ func (c *CouponCache) SetValidCoupons(coupons []entities.Coupon) error {
 - This is used when promoting a coupon from the file cold store to the hot cache.
 - Redis's maxmemory policy will handle LRU eviction if the cache is full.
 */
-func (c *CouponCache) AddCouponToCache(couponCode entities.Coupon) error {
+func (c *CouponCache) AddCouponToCache(couponCode string) error {
 	cmd := c.redisClient.SAdd(c.ctx, "valid_coupons", couponCode)
 	if cmd.Err() != nil {
 		return fmt.Errorf("redis SADD error for %s: %w", couponCode, cmd.Err())

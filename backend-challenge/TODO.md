@@ -2,19 +2,19 @@
 - ~~Create basic server~~
 - ~~Setup docker for the server~~
 - ~~Setup a logger~~
-- Add CI/CD
+- Add CI/CD [WILL DO]
 	- static analysis with semgrep rules (for security and code quality)
 	- tests
 	- test deployment to ECS
 - ~~Add database with seed-data, and connnect to the server~~
 - Security: [Not implementing]
-	- audit docker image
+	- audit docker images
 	- audit go dependancies
-- errors
+- ~~custom errors~~
 
 ## Implement APIs with TDD, covering all the edge cases.
 
-### GET List Products api
+### GET List Products api✔️
 - No auth
 - No middleware - can introduce pagination as middleware
 - Response should include metadata like total, nextUrl etc; default pagination to 25
@@ -26,7 +26,7 @@
 - Test for empty array if db is empty. (status=200)
 - Test for 500 errors
 - Ratelimit
-### GET Product api
+### GET Product api✔️
 - No auth
 - No middleware
 - No validation
@@ -34,17 +34,17 @@
 - Test for non-existent id (status=404)
 - Test for 500 errors
 - Ratelimit
-### POST Create Order api
-- Authenticate with middleware
-- Validate schema
+### POST Create Order api✔️
+- ~~Authenticate with middleware~~
+- ~~Validate schema~~
 - Route Handler:
-	- validate that productIds are valid
-	- validate quantity is in stock
-	- validate couponcode
-		- check from redis cache
-		- on Cache-Miss, read from valid coupons list file.
+	- ~~validate that productIds are valid~~
+	- ~~validate quantity is in stock~~
+	- ~~validate couponcode~~
+		- ~~check from redis cache~~
+		- ~~on Cache-Miss, read from valid coupons list file.~~
 - Ratelimit
-### PUT Update cache api
+### PUT Update cache api✔️
 - authenticate with middleware using admin api key
 - read from processed-coupons and update cache
 - 10 bytes(10 chars) * 100 = 1000 bytes = 1KB
@@ -54,7 +54,7 @@
 - on cache-miss, read from rest of the file.
 - Tests
 
-### POST new-coupons api
+### POST new-coupons api✔️
 - validate with admin api key
 - add a message to redis message queue
 - Tests

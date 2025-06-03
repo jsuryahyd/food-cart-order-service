@@ -138,7 +138,7 @@ func (p *PgProductRepository) GetListOfProductDetails(ctx context.Context, tx *s
 	for rows.Next() {
 		var dao ProductDAO
 		if err := rows.Scan(
-			&dao.ID, &dao.Name, &dao.Price, &dao.CreatedAt, &dao.UpdatedAt, &dao.DeletedAt,
+			&dao.ID, &dao.Name, &dao.Price, &dao.CreatedAt, &dao.UpdatedAt, &dao.DeletedAt, &dao.CategoryId, &dao.CategoryName,
 		); err != nil {
 			return nil, err
 		}

@@ -73,9 +73,12 @@ services:
       REDIS_PORT: 6379
       REDIS_COUPON_UPDATE_CHANNEL: coupon_updates
       REDIS_WORKER_TRIGGER_CHANNEL: trigger_worker
-      COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
-      COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
-      COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
+      # COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
+      # COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
+      # COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
+      COUPON_FILE1_URL: http://host.docker.internal:2025/couponbase1.gz
+      COUPON_FILE2_URL: http://host.docker.internal:2025/couponbase2.gz
+      COUPON_FILE3_URL: http://host.docker.internal:2025/couponbase3.gz
       OUTPUT_FILE_PATH: /output/processed_coupons.txt
       OUTPUT_INDEX_FILE_PATH: /output/processed_coupons.idx
       PROCESSED_COUPONS_FILE_PATH: /app/data/processed_coupons.txt
@@ -86,6 +89,11 @@ services:
       - processed_coupons_data:/output
       - ./configs:/app/configs
     command: ["./coupon_preprocessor"]
+    deploy:
+      resources:
+        limits:
+          cpus: '4'  # Allocate 4 CPU cores
+          memory: 4G # Allocate 4 GB of RAM
 
 volumes:
   db_data:

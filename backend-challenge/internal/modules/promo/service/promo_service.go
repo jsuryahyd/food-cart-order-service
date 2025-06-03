@@ -40,7 +40,7 @@ func (s *PromoService) ValidateCoupon(couponCode entities.Coupon) (bool, error) 
 	s.logger.Debugf("Attempting to validate coupon: %s", couponCode)
 
 	// Step 1: Check Redis Hot Cache
-	isCached, err := s.couponCache.IsCouponValid(couponCode)
+	isCached, err := s.couponCache.IsCouponValid(string(couponCode))
 	if err != nil {
 		s.logger.Errorf("Error checking coupon %s in Redis hot cache: %v. Falling back to file store.", couponCode, err)
 		// If Redis error, still try file store (degraded mode)
@@ -64,7 +64,7 @@ func (s *PromoService) ValidateCoupon(couponCode entities.Coupon) (bool, error) 
 
 	s.logger.Debugf("Coupon %s found in indexed file. Promoting to Redis hot cache.", couponCode)
 	// Step 3: If found in file, promote to Redis hot cache (triggers LRU)
-	err = s.couponCache.AddCouponToCache(couponCode)
+	err = s.couponCache.AddCouponToCache(string(couponCode))
 	if err != nil {
 		s.logger.Warnf("Warning: Failed to promote coupon %s to Redis hot cache: %v", couponCode, err)
 		// just cache update failed, Don't return error here, as validation succeeded.
@@ -90,9 +90,14 @@ func (s *PromoService) RefreshCacheFromFiles() error {
 		return fmt.Errorf("failed to get hot coupons for initial cache: %w", err)
 	}
 
+	var hotCouponsStrings []string
+	for _, c := range hotCoupons {
+		hotCouponsStrings = append(hotCouponsStrings, string(c))
+	}
+
 	// Clear existing Redis cache before setting new hot coupons, or use a method that overwrites.
 	// For simplicity, SetValidCoupons replaces for now.
-	err = s.couponCache.SetValidCoupons(hotCoupons) // This will push the subset to Redis
+	err = s.couponCache.SetValidCoupons(hotCouponsStrings) // This will push the subset to Redis
 	if err != nil {
 		return fmt.Errorf("failed to set valid coupons in Redis hot cache during refresh: %w", err)
 	}

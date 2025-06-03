@@ -146,6 +146,15 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	if os.Getenv("PROCESSED_COUPONS_INDEX_FILE_PATH") != "" {
 		config.CouponProcessor.ProcessedCouponsIndexFilePath = os.Getenv("PROCESSED_COUPONS_INDEX_FILE_PATH")
 	}
+	if os.Getenv("COUPON_FILE1_URL") != "" {
+		config.CouponProcessor.ProcessedCouponsIndexFilePath = os.Getenv("COUPON_FILE1_URL")
+	}
+	if os.Getenv("COUPON_FILE2_URL") != "" {
+		config.CouponProcessor.ProcessedCouponsIndexFilePath = os.Getenv("COUPON_FILE2_URL")
+	}
+	if os.Getenv("COUPON_FILE3_URL") != "" {
+		config.CouponProcessor.ProcessedCouponsIndexFilePath = os.Getenv("COUPON_FILE2_URL")
+	}
 	if os.Getenv("NUM_HOT_COUPONS_IN_CACHE") != "" {
 		num, err := strconv.Atoi(os.Getenv("NUM_HOT_COUPONS_IN_CACHE"))
 		if err == nil {

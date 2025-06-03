@@ -9,7 +9,7 @@ import (
 )
 
 func GetConnection(dbURL string, logger *logging.Logger) (*sql.DB, error) {
-	const maxAttempts = 3
+	const maxAttempts = 10
 	var db *sql.DB
 	var err error
 
