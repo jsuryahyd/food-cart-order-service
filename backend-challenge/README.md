@@ -27,6 +27,7 @@
 	- Will be deployed as a separate long running worker container that continuosly polls a message queue(redis in this case, for simplicity) to listen for file changes. (If files were static, this would be a single removable job).
 	- Alternatively, in a production setting, the worker job can be offloaded to a serverless(eg: AWS Lambda) function, that can process and save the processed list file in AWS S3, and update the redis cluster.
 - **Database:** Postgres DB is chosen for its ACID compliance (transactions for order placing and stock count reduction), strong consistency and better handling of relational data.
+	![Database Schema](./docs/db-schema.png)
 - **Deployment** with Docker Compose
 	- Going with docker-compose for the simple use case.
 	- Kuberenetes would be preferable for distributed, Multi-tenant SaaS deployments.
@@ -44,11 +45,8 @@
 - zap for logging
 - viper for loading config
 
-
-
-
-
-## [Todo](./TODO.md)
-- [In Progress](./IN_PROGRESS.md)
-- [Done](./DONE.md)
+---
+- ### [Todo](./TODO.md)
+- ### [In Progress](./IN_PROGRESS.md)
+- ### [Done](./DONE.md)
 

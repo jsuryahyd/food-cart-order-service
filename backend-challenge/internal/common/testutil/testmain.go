@@ -1,4 +1,3 @@
-// internal/common/testutil/testmain.go
 package testutil
 
 import (

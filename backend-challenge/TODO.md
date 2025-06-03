@@ -69,4 +69,3 @@
 - **Challenges**
 	- Each file is around 1GB in size. Job must not go out of memory.
 	- Should not effect the application Startup time.
-	- 

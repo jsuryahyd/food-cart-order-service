@@ -14,14 +14,18 @@ services:
       DB_NAME: ${DB_NAME}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      ADMIN_API_KEY: ${ADMIN_API_KEY} # Or fetch from a secret management
+      ADMIN_API_KEY: ${ADMIN_API_KEY} # Or fetch from a secrets manager
       PROCESSED_COUPONS_FILE_PATH: /app/data/processed_coupons.txt
+      PROCESSED_COUPONS_INDEX_FILE_PATH: /app/data/processed_coupons.idx
+      NUM_HOT_COUPONS_IN_CACHE: 500000
+      REDIS_COUPON_UPDATE_CHANNEL: coupon_updates
+      REDIS_WORKER_TRIGGER_CHANNEL: trigger_worker
       SHOULD_SEED_DATA: true
     depends_on:
       - db
       - redis
-    # For local development, mount source code for hot-reloading (if you set it up)
     volumes:
+      # For local development, mount source code for hot-reloading (if you set it up)
       # - .:/app
       - processed_coupons_data:/app/data
 
@@ -48,35 +52,49 @@ services:
     ports:
       - "5433:5432" # Expose for local DB access
 
-
   redis:
-    image: redis:7-alpine
+    image: redis:6-alpine
+    container_name: "redis"
     ports:
-      - "6379:6379" # Expose for local Redis access
-    command: redis-server --appendonly yes # Enable AOF for data persistence
+      - "6379:6379"
     volumes:
-      - redis_data:/data # Persistent data volume
+      - redis_data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    configs:
+      - source: redis_config
+        target: /usr/local/etc/redis/redis.conf
 
   coupon_preprocessor:
     build:
       context: .
       dockerfile: cmd/worker/Dockerfile
     environment:
-      # Pass URLs of coupon files to the pre-processor
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_COUPON_UPDATE_CHANNEL: coupon_updates
+      REDIS_WORKER_TRIGGER_CHANNEL: trigger_worker
       COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
       COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
       COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
-      # Output path for the pre-processed file within this container
+      # COUPON_FILE1_URL: http://localhost:2025/file1.txt.gz
+      # COUPON_FILE2_URL: http://localhost:2025/file2.txt.gz
+      # COUPON_FILE3_URL: http://localhost:2025/file3.txt.gz
       OUTPUT_FILE_PATH: /output/processed_coupons.txt
+      OUTPUT_INDEX_FILE_PATH: /output/processed_coupons.idx
+      PROCESSED_COUPONS_FILE_PATH: /app/data/processed_coupons.txt
+      PROCESSED_COUPONS_INDEX_FILE_PATH: /app/data/processed_coupons.idx
+    depends_on:
+      - redis
     volumes:
-      # Mount the same named volume here, but to an output path for the pre-processor
       - processed_coupons_data:/output
-    # This service is usually run manually or via a cron, not always up
-    # If you want it to run on 'docker-compose up', you can define a command:
-    command: ["./coupon_preprocessor"] # The binary name from its Dockerfile
+      - ./configs:/app/configs
+    command: ["./coupon_preprocessor"]
 
 volumes:
   db_data:
   redis_data:
   processed_coupons_data:
-  # .:
+
+configs:
+  redis_config:
+    file: ./redis/redis.conf

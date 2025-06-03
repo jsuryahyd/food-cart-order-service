@@ -13,23 +13,23 @@ import (
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 	oe "github.com/jsuryahyd/food-cart-order-service/internal/modules/order/entities"
 	"github.com/jsuryahyd/food-cart-order-service/internal/modules/order/http/dto"
+	promoEntities "github.com/jsuryahyd/food-cart-order-service/internal/modules/promo/entities"
+	promohandler "github.com/jsuryahyd/food-cart-order-service/internal/modules/promo/http"
 )
 
-// OrderService defines the interface for order-related business logic.
 type OrderService interface {
 	PlaceOrder(ctx context.Context, payload *oe.PlaceOrderPayload) (*oe.Order, error)
 	GetOrderById(ctx context.Context, id uuid.UUID) (*oe.Order, error)
 }
 
-// OrderHandler handles HTTP requests for order-related operations.
 type OrderHandler struct {
 	orderService OrderService
 	logger       *logging.Logger
+	promoService promohandler.PromoService
 }
 
-// NewOrderHandler creates and returns a new OrderHandler instance.
-func NewOrderHandler(orderService OrderService) *OrderHandler {
-	return &OrderHandler{orderService: orderService, logger: logging.GetLogger()}
+func NewOrderHandler(orderService OrderService, promoService promohandler.PromoService) *OrderHandler {
+	return &OrderHandler{orderService: orderService, promoService: promoService, logger: logging.GetLogger()}
 }
 
 // POST /order endpoint
@@ -68,6 +68,18 @@ func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 			"message": "Unauthorized: user session not found",
 		})
 		return
+	}
+
+	if req.CouponCode != "" {
+		//todo: check length of the coupon and return early
+		_, err := h.promoService.ValidateCoupon(promoEntities.Coupon(req.CouponCode))
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   true,
+				"message": apperrors.UserMessage(apperrors.ErrInvalidCoupon),
+			})
+			return
+		}
 	}
 
 	payload := &oe.PlaceOrderPayload{

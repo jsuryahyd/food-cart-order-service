@@ -41,6 +41,14 @@ func (m *MockProductRepository) GetListOfProducts(ctx context.Context, params *p
 	return args.Get(0).([]*pr.ProductDAO), args.Error(1)
 }
 
+func (m *MockProductRepository) GetListOfProductDetails(ctx context.Context, tx *sql.Tx, productIds []uuid.UUID) ([]*pr.ProductDAO, error) {
+	args := m.Called(ctx, tx, productIds)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*pr.ProductDAO), args.Error(1)
+}
+
 func TestProductService_GetProductByID(t *testing.T) {
 	mockRepo := new(MockProductRepository)
 	productService := service.NewProductService(mockRepo)

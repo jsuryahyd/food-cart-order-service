@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/viper"
@@ -51,9 +52,12 @@ type TestDBConfig struct {
 }
 
 type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int16  `mapstructure:"port"`
-	Password string `mapstructure:"password"`
+	Host                 string `mapstructure:"host"`
+	Port                 int16  `mapstructure:"port"`
+	Password             string `mapstructure:"password"`
+	DB                   int    `mapstructure:"db"`
+	CouponUpdateChannel  string `mapstructure:"coupon_update_channel"`
+	WorkerTriggerChannel string `mapstructure:"worker_trigger_channel"`
 }
 
 type ApiKeysConfig struct {
@@ -61,10 +65,14 @@ type ApiKeysConfig struct {
 }
 
 type CouponProcessorConfig struct {
-	COUPON_FILE1_URL string
-	COUPON_FILE2_URL string
-	COUPON_FILE3_URL string
-	OUTPUT_FILE_PATH string
+	COUPON_FILE1_URL              string
+	COUPON_FILE2_URL              string
+	COUPON_FILE3_URL              string
+	OUTPUT_FILE_PATH              string
+	OUTPUT_INDEX_FILE_PATH        string `mapstructure:"OUTPUT_INDEX_FILE_PATH"`
+	ProcessedCouponsFilePath      string `mapstructure:"ProcessedCouponsFilePath"`
+	ProcessedCouponsIndexFilePath string `mapstructure:"ProcessedCouponsIndexFilePath"`
+	NumHotCouponsInCache          int    `mapstructure:"NumHotCouponsInCache"`
 }
 
 type MiscConfig struct {
@@ -88,6 +96,11 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	if err := v.BindEnv("database.password", "DB_PASSWORD"); err != nil {
 		fmt.Fprintf(os.Stderr, "WARN: Failed to bind DB_PASSWORD env var: %v\n", err)
 	}
+
+	if err := v.BindEnv("redis.host", "REDIS_HOST"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind REDIS_HOST env var: %v\n", err)
+	}
+
 	if err := v.BindEnv("redis.password", "REDIS_PASSWORD"); err != nil {
 		fmt.Fprintf(os.Stderr, "WARN: Failed to bind REDIS_PASSWORD env var: %v\n", err)
 	}
@@ -106,11 +119,41 @@ func LoadConfig(configFilePath string) (*Config, error) {
 			return nil, fmt.Errorf("error loading config %w", err)
 		}
 	}
-
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config %v %w", v, err)
 	}
+
+	fmt.Printf("config before %+v", config)
+	fmt.Println("--", os.Getenv("REDIS_HOST"), os.Getenv("APP_REDIS_HOST"))
+	if os.Getenv("REDIS_HOST") != "" {
+		config.Redis.Host = os.Getenv("REDIS_HOST")
+	}
+	if os.Getenv("REDIS_PORT") != "" {
+		port, err := strconv.Atoi(os.Getenv("REDIS_PORT"))
+		if err == nil {
+			config.Redis.Port = int16(port)
+		}
+	}
+	if os.Getenv("REDIS_COUPON_UPDATE_CHANNEL") != "" {
+		config.Redis.CouponUpdateChannel = os.Getenv("REDIS_COUPON_UPDATE_CHANNEL")
+	}
+	if os.Getenv("REDIS_WORKER_TRIGGER_CHANNEL") != "" {
+		config.Redis.CouponUpdateChannel = os.Getenv("REDIS_WORKER_TRIGGER_CHANNEL")
+	}
+	if os.Getenv("PROCESSED_COUPONS_FILE_PATH") != "" {
+		config.CouponProcessor.ProcessedCouponsFilePath = os.Getenv("PROCESSED_COUPONS_FILE_PATH")
+	}
+	if os.Getenv("PROCESSED_COUPONS_INDEX_FILE_PATH") != "" {
+		config.CouponProcessor.ProcessedCouponsIndexFilePath = os.Getenv("PROCESSED_COUPONS_INDEX_FILE_PATH")
+	}
+	if os.Getenv("NUM_HOT_COUPONS_IN_CACHE") != "" {
+		num, err := strconv.Atoi(os.Getenv("NUM_HOT_COUPONS_IN_CACHE"))
+		if err == nil {
+			config.CouponProcessor.NumHotCouponsInCache = num
+		}
+	}
+	// fmt.Printf("config after %+v", config)
 
 	return &config, nil
 

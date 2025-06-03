@@ -2,7 +2,8 @@
 // - tools.go is a common convention to track build dependencies.
 // - The build tag `tools` prevents the file from being built into your application.
 // - The `_` import statement indicates that these are imports for side effects (like adding to go.mod).
-
+// - this is used to generate api/generated folder.
+// - used with scripts/api-codegen.sh
 package tools
 
 import (

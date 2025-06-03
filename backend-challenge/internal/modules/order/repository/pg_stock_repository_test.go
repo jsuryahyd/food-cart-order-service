@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/apperrors"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/db"
+	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/errors"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/testutil"
 
