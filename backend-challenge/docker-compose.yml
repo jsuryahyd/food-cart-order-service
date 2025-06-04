@@ -37,7 +37,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432" # Expose for local DB access
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data # Persistent data volume
 
@@ -64,18 +64,32 @@ services:
       - source: redis_config
         target: /usr/local/etc/redis/redis.conf
 
+  redis_counter:
+    image: "redis:6-alpine"
+    container_name: "redis_counter"
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_counter_data:/data
+      - ./redis/redis_counter.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
   coupon_preprocessor:
     build:
       context: .
       dockerfile: cmd/worker/Dockerfile
+    ports:
+      - "6060:6060"
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_COUPON_UPDATE_CHANNEL: coupon_updates
       REDIS_WORKER_TRIGGER_CHANNEL: trigger_worker
-      # COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
-      # COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
-      # COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
+      REDIS_COUNTER_HOST: redis_counter
+      REDIS_COUNTER_PORT: 6379
+      # REDIS_COUNTER_PASSWORD:  # IMPORTANT: Set password!
+      REDIS_COUNTER_DB: 0
+      REDIS_COUNTER_POOL_SIZE: 10
       COUPON_FILE1_URL: http://host.docker.internal:2025/couponbase1.gz
       COUPON_FILE2_URL: http://host.docker.internal:2025/couponbase2.gz
       COUPON_FILE3_URL: http://host.docker.internal:2025/couponbase3.gz
@@ -85,6 +99,7 @@ services:
       PROCESSED_COUPONS_INDEX_FILE_PATH: /app/data/processed_coupons.idx
     depends_on:
       - redis
+      - redis_counter
     volumes:
       - processed_coupons_data:/output
       - ./configs:/app/configs
@@ -93,11 +108,13 @@ services:
       resources:
         limits:
           cpus: '4'  # Allocate 4 CPU cores
-          memory: 4G # Allocate 4 GB of RAM
+          memory: 6g # Allocate 6 GB of RAM
+
 
 volumes:
   db_data:
   redis_data:
+  redis_counter_data:
   processed_coupons_data:
 
 configs:

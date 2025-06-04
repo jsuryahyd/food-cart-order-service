@@ -44,7 +44,7 @@ COPY configs/ configs/
 # to '/output' within the coupon_preprocessor container, and the Go application
 # expects this directory to exist when it tries to write to OUTPUT_FILE_PATH.
 RUN mkdir -p /output
-
+EXPOSE 6060
 # The command to run the executable.
 # As discussed, this service is designed to run and exit after processing,
 # or to continuously poll Redis in a more advanced setup.

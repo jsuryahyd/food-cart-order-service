@@ -84,6 +84,13 @@ func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 		isValid, err := h.promoService.ValidateCoupon(promoEntities.Coupon(req.CouponCode))
 		if err != nil {
 			h.logger.Errorf("error while validating coupon %v", err)
+			if errors.Is(err, apperrors.ErrServiceUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{
+					"error":   true,
+					"message": apperrors.UserMessage(err),
+				})
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   true,
 				"message": apperrors.UserMessage(apperrors.ErrInternalServerForOrders), //custom message for the module

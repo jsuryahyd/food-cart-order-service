@@ -51,22 +51,18 @@
 		# COUPON_FILE1_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase1.gz
 		# COUPON_FILE2_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase2.gz
 		# COUPON_FILE3_URL: https://orderfoodonline-files.s3.ap-southeast-2.amazonaws.com/couponbase3.gz
-		COUPON_FILE1_URL: http://host.docker.internal:2025/couponbase1.gz #host.docker.internal = host machine's localhost
+		COUPON_FILE1_URL: http://host.docker.internal:2025/couponbase1.gz # host.docker.internal = host machine's localhost
 		COUPON_FILE2_URL: http://host.docker.internal:2025/couponbase2.gz
 		COUPON_FILE3_URL: http://host.docker.internal:2025/couponbase3.gz
 		```
-	- This should let the `coupon_preprocessor` worker startup quickly.
+	- This should let the `coupon_preprocessor` worker startup quicker.
 	- The deployment has config in "development" mode. Database is cleared and seeded everytime the application is rebuilt. So, ProductIds change after re building the api service.
 
 ### System Requirements For Coupons Worker and Cache
-- Naive Approach:✖️
-	- Process 3 files in to 1 valid coupons file (worst case  ~200M = ~2GB), and load it to memory while processing. and store these items in to Redis.
-	- Worker Job may require at most a RAM size upto 14 GB. Docker Desktop might be needed to configure to allow for higher memory allocation.
-	- Worker Job Requires processing 3 * 1GB files(~100M). Based on coupon validity requirements, At most 200M coupon tokens might have to be loaded on to a golang map object. (map object = 70-80 bytes per coupon * 200 M = 14GB)
-- Optimized Approach:✔️
-	- Optimized approach uses a 2-tiered cache approach. A hot cache of 500K coupons (configurable) in to Redis (~50MB RAM). Remaining coupons on an indexed file, which allows for faster querying.
-	- The Pre-processing is still CPU Intensive. So, Higher memory and CPU allocation is added for the container in [docker-compose.yml](docker-compose.yml). However my local system still struggles with the actual files. Works fine with smaller coupon file sizes.
-	- Requires further profiling.
+With the Optimized approach the RAM requirement for the coupon processing is currently around 6-7GB of RAM combinedly used by the worker and Redis Counter cache instance.
+If using Docker with WSL on windows, we will have to increase the allowed memory limit using `.wslconfig` file. (easily searchable for details).
+
+
 
 
 ### Implementation Details
@@ -80,9 +76,26 @@
 - **Promo Module**
 	- The module code is shared by two applications - [Server](cmd/server/main.go) and [Worker](cmd/worker/main.go). 
 	- Redis Pub/Sub is used to coordinate loading of coupons in to cache. An admin api `/admin/update-coupon-cache` simulates a 'coupon files updated event' (say from s3), to which the server would send a trigger processing message to Pub/Sub(Message Queue). The Worker receives the message and creates the valid_coupons file, send a message to the Pub/Sub. The Server on receiving the message, refreshes its cache from the valid_coupons file.
-	- Redis Cache is used to store hot cache of coupons
-	- A processed indexed file (indexed for faster querying) is used as cold cache, which is accessed on cache-miss. The loaded coupon will now be added to hot cache. LRU eviction strategy is used. 
+	- Redis Cache is used to store hot cache of valid coupons
+	### Worker implementation
+	**Naive Approach:**✖️
+	- Process 3 files in to 1 valid coupons file (worst case  ~200M = ~2GB), and load it to memory while processing. and store these items in to Redis.
+	- Worker Job may require at most a RAM size upto 14 GB. Docker Desktop might be needed to configure to allow for higher memory allocation.
+	- Worker Job Requires processing 3 * 1GB files(~100M). Based on coupon validity requirements, At most 200M coupon tokens might have to be loaded on to a golang map object. (map object = 70-80 bytes per coupon * 200 M = 14GB)
+	**Optimized Approach:**✔️
+	- A processed indexed file (indexed for faster querying) is used as cold cache, which is accessed on cache-miss. The loaded coupons on Redis will now be added to hot cache. LRU eviction strategy is used. 
+	- Optimized approach uses a 2-tiered cache approach. A hot cache of 500K coupons (configurable) in to Redis (~50MB RAM). Remaining coupons on an indexed file, which allows for faster querying.
+	- The Pre-processing is still CPU Intensive. So, Higher memory and CPU allocation is added for the container in [docker-compose.yml](docker-compose.yml). However my local system still struggles with the actual files. Works fine with smaller coupon file sizes.
 	- Indexed file works well and performant for this case, even compared to using a No SQL databases like cassandra or Elastic Search which are overkill.
+	- Requires further profiling.
+	**Optimized with Redis:**
+	- Storing coupons in memory, while processing kills docker container with Out Of Memory(OOM). Tested with 6GB RAM allowed to Docker. The containers went OOM at 20% of file processing. So instead a separate Redis instance is being used to store "allcoupons" with count. Later these coupons are streamed back from redis and written to file. 
+	- Advantage would be that high memory management is now offloaded to Redis. With Redis the memory requirement has reduced significantly to around 6GB for both the containers combined(coupon_preprocessor + Redis Counter).
+	- PProf heaps output for the worker, show a reduction of memory usage from 2700 MB to 200MB
+	- Coupons are loaded from each file and sent to redis in batches of 50K(adjusted via trial and error), with retries with incremental backoff.
+	- The redis instance is configured to not store any data to disk, for faster processing. Having default config caused many HSET failures.
+	- after all files are completed, then the coupons are streamed back and written to indexed file.
+	- So, the indexed file is still the cold cache. We can also use Redis as the secondary cold cache, but this would lead to constant high memory usage and cost
 
 ### Note: 
 #### Known Issues
@@ -90,11 +103,11 @@ Due to Time constraint, In a few areas delivering the working solution is given 
 Few coding style issues are to be addressed. These will continued to be fixed after assignment submission.
 - backend-challenge\internal\common\config\config.go has some inconsistent env loading and inconsistent env variable naming, that needs refactoring. [WILL DO]
 - order_service.go has direct sql access in order to orchestrate transaction(only repositories should work with database). This is common and acceptable, but I would like to use "Unit Of Work" pattern to avoid this.
-- Tests are pending for Order and promo modules
+- Tests are pending for Order and promo modules [WILL DO]
 - Few logs are logged as info, instead of debug.
 - sqlx struct mapping is used to read from DB, but `row.scan()` is used in few places directly.
-- Building the images separately and running them separately sometimes causes database connection issues in api service. Needs to be investigated.
-- These and other inconsistencies found are the most likely the result of working in isolation, time constraint and lack of automated CI/CD setup.
+- ~~Building the images separately and running them separately sometimes causes database connection issues in api service. Needs to be investigated.~~
+- These and other inconsistencies found are the most likely the result of working in isolation, time constraint and lack of further setup and CI/CD .
 #### API schema Confusion
 - The openapi.yml schema file present in the api/ folder of the original repository is different from the schema file linked in the [challenge](./challenge.md). I have followed the linked schema in the challenge. This schema does not return images in GET /Product api.
 ---

@@ -4,6 +4,8 @@ package main
 import (
 	"context" // New import for binary encoding of the index
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,7 +25,8 @@ type CouponCounts map[string]int
 type CouponIndex map[string]int64
 
 var appConfig *config.Config
-var redisClient *redis.Client  // Global Redis client instance
+var redisClient *redis.Client
+var redisCounterClient *redis.Client
 var ctx = context.Background() // Context for Redis operations
 
 // init function to load environment variables and config
@@ -41,7 +44,8 @@ func init() {
 	appConfig = cfg
 
 	// Initialize Redis client using configuration
-	redisClient = rc.GetRedisClient(cfg)
+	redisClient = rc.GetRedisClient(&cfg.Redis)
+	redisCounterClient = rc.GetRedisCounterClient(&cfg.RedisCounter) //todo: move to counter logic. we do not need a persistent connection
 	// Ping Redis to check connectivity
 	_, err = redisClient.Ping(ctx).Result()
 	if err != nil {
@@ -56,15 +60,27 @@ func init() {
 	log.Printf("Loaded OUTPUT_FILE_PATH: %s", appConfig.CouponProcessor.OUTPUT_FILE_PATH)
 	log.Printf("Loaded OUTPUT_INDEX_FILE_PATH: %s", appConfig.CouponProcessor.OUTPUT_INDEX_FILE_PATH) // New log
 	log.Printf("Redis Host: %s, Port: %d", appConfig.Redis.Host, appConfig.Redis.Port)
+	log.Printf("Redis Counter Host: %s, Port: %d", cfg.RedisCounter.Host, cfg.RedisCounter.Port)
 	log.Printf("Redis Coupon Update Channel: %s", appConfig.Redis.CouponUpdateChannel)
 }
 
 func main() {
+
+	if appConfig.Environment == "development" {
+
+		go func() {
+			log.Println("Starting pprof server on :6060")                    // Add this log to confirm it starts
+			if err := http.ListenAndServe("0.0.0.0:6060", nil); err != nil { // Listen on 0.0.0.0
+				log.Printf("Pprof server failed: %v", err) // Log any error
+			}
+		}()
+	}
+
 	if appConfig == nil {
 		log.Fatal("App config not available or not loaded during init.")
 	}
 
-	worker := promoworker.NewWorker(appConfig, redisClient)
+	worker := promoworker.NewWorker(appConfig, redisClient, redisCounterClient)
 	log.Println("Starting Coupon pre-processor worker...")
 
 	quit := make(chan os.Signal, 1)
@@ -78,5 +94,6 @@ func main() {
 	<-quit //block execution until a signal is received
 	log.Println("Shutting down worker...")
 	rc.CloseRedisClient()
+	rc.CloseRedisCounterClient()
 	log.Println("Coupon pre-processor worker stopped.")
 }

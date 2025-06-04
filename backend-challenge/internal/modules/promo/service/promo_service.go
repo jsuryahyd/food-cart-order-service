@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/config"
+	apperrors "github.com/jsuryahyd/food-cart-order-service/internal/common/errors"
 	"github.com/jsuryahyd/food-cart-order-service/internal/common/logging"
 	"github.com/jsuryahyd/food-cart-order-service/internal/modules/promo/adapter/cache"
 	"github.com/jsuryahyd/food-cart-order-service/internal/modules/promo/adapter/store"
@@ -17,6 +18,8 @@ type PromoService struct {
 	appConfig   *config.Config
 	logger      *logging.Logger
 }
+
+var isFilePopulated = false
 
 func NewPromoService(couponCache *cache.CouponCache, fileStore *store.CouponFileStore, appConfig *config.Config) *PromoService {
 	ps := &PromoService{
@@ -50,6 +53,10 @@ func (s *PromoService) ValidateCoupon(couponCode entities.Coupon) (bool, error) 
 
 	s.logger.Debugf("Coupon %s not in Redis hot cache. Checking indexed file cold store.", couponCode)
 
+	if !isFilePopulated {
+		// this is useful on application startup. if the files are not processed, we can return 503 only for services depending on this.
+		return false, fmt.Errorf("Coupon file store is not ready: %w", apperrors.ErrServiceUnavailable)
+	}
 	// Step 2: Check Indexed File Cold Store
 	isFoundInFile, err := s.fileStore.LookupCouponInFile(couponCode)
 	if err != nil {
@@ -77,7 +84,7 @@ func (s *PromoService) ValidateCoupon(couponCode entities.Coupon) (bool, error) 
 // This function should be called by an admin API endpoint or on application startup.
 func (s *PromoService) RefreshCacheFromFiles() error {
 	s.logger.Infoln("Refreshing Redis hot cache from processed coupon file and loading index...")
-
+	isFilePopulated = true //we know that file is populated.
 	// Load the in-memory index first
 	err := s.fileStore.LoadIndex()
 	if err != nil {

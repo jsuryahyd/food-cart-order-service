@@ -21,13 +21,13 @@ var (
 )
 
 // returns a singleton instance of the Redis client.
-func GetRedisClient(cfg *config.Config) *redis.Client {
+func GetRedisClient(cfg *config.RedisConfig) *redis.Client {
 	once.Do(func() {
 		logger.Info("Initializing Redis client...")
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
-			Password: cfg.Redis.Password,
-			DB:       cfg.Redis.DB,
+			Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+			Password: cfg.Password,
+			DB:       cfg.DB,
 		})
 
 		// Ping Redis to check connectivity

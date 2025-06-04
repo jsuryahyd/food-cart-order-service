@@ -15,6 +15,7 @@ type Config struct {
 	Database        DatabaseConfig        `mapstructure:"database"`
 	TestDB          TestDBConfig          `mapstructure:"testdb"`
 	Redis           RedisConfig           `mapstructure:"redis"`
+	RedisCounter    RedisCounterConfig    `mapstructure:"redis_counter"`
 	ApiKeys         ApiKeysConfig         `mapstructure:"api_keys"`
 	CouponProcessor CouponProcessorConfig `mapstructure:"coupon_preprocessor"`
 	Misc            MiscConfig            `mapstructure:"misc"`
@@ -60,6 +61,14 @@ type RedisConfig struct {
 	WorkerTriggerChannel string `mapstructure:"worker_trigger_channel"`
 }
 
+type RedisCounterConfig struct {
+	Host                string `mapstructure:"host"`
+	Port                int16  `mapstructure:"port"`
+	Password            string `mapstructure:"password"`
+	DB                  int    `mapstructure:"db"`
+	CouponCountsHashKey string `mapstructure:"coupon_counts_hashkey"`
+}
+
 type ApiKeysConfig struct {
 	AdminKey string `mapstructure:"admin_api_key"`
 }
@@ -73,6 +82,7 @@ type CouponProcessorConfig struct {
 	ProcessedCouponsFilePath      string `mapstructure:"ProcessedCouponsFilePath"`
 	ProcessedCouponsIndexFilePath string `mapstructure:"ProcessedCouponsIndexFilePath"`
 	NumHotCouponsInCache          int    `mapstructure:"NumHotCouponsInCache"`
+	UseRedisForCounting           bool   `mapstructure:"use_redis_for_counting"`
 }
 
 type MiscConfig struct {
@@ -85,6 +95,18 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()
 	v.SetEnvPrefix("APP")
+
+	//Redis counter (works along with coupon preprocessor)
+	v.SetDefault("coupon_preprocessor.use_redis_for_counting", true)
+	v.SetDefault("redis_counter.coupon_counts_hashkey", "validCouponsCount")
+
+	if err := v.BindEnv("redis_counter.host", "REDIS_COUNTER_HOST"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind REDIS_COUNTER_HOST env var: %v\n", err)
+	}
+	//todo: setReplacer() would do this automatically
+	if err := v.BindEnv("redis_counter.port", "REDIS_COUNTER_PORT"); err != nil {
+		fmt.Fprintf(os.Stderr, "WARN: Failed to bind REDIS_COUNTER_PORT env var: %v\n", err)
+	}
 
 	// env vars (set from docker-compose) not .env file
 	if err := v.BindEnv("database.host", "DB_HOST"); err != nil {

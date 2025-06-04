@@ -50,7 +50,7 @@ func NewApplication(ctx context.Context, config *config.Config) (*Application, e
 	}
 
 	// Initialize Redis client for the main app
-	redisClient = redisclient.GetRedisClient(config)
+	redisClient = redisclient.GetRedisClient(&config.Redis)
 	_, err := redisClient.Ping(context.Background()).Result()
 	if err != nil {
 		logger.Fatalf("Could not connect to Redis from main app: %v", err)
