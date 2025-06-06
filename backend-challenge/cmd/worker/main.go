@@ -43,7 +43,7 @@ func init() {
 	}
 	appConfig = cfg
 
-	// Initialize Redis client using configuration
+	//todo: application shutsdown (log.Fatalf) when redis cache takes time to load and this method returns error. Implement retry mechanism
 	redisClient = rc.GetRedisClient(&cfg.Redis)
 	redisCounterClient = rc.GetRedisCounterClient(&cfg.RedisCounter) //todo: move to counter logic. we do not need a persistent connection
 	// Ping Redis to check connectivity

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -332,9 +333,13 @@ func (w *Worker) processCouponFiles(ctx context.Context, counter CouponCounter) 
 			}()
 			defer wgDownload.Done()
 			w.logger.Infof("Downloading and processing %s\n", fileURL)
-			err := downloadAndProcessFile(ctx, fileURL, couponStream) // Pass the channel
+			err := downloadAndProcessFile(processingCtx, fileURL, couponStream) // Pass the channel
 			if err != nil {
-				w.logger.Infof("Error processing %s: %v\n", fileURL, err)
+				if errors.Is(err, context.Canceled) { //
+					w.logger.Infof("Processing %s cancelled due to context cancellation: %v\n", fileURL, err)
+				} else {
+					w.logger.Infof("Error processing %s: %v\n", fileURL, err)
+				}
 				return
 			}
 			w.logger.Infof("Finished processing %s\n", fileURL)
@@ -353,7 +358,7 @@ func (w *Worker) processCouponFiles(ctx context.Context, counter CouponCounter) 
 				return
 			case batch, ok := <-couponStream:
 				if !ok { //channel closed.
-					w.logger.Info("File read completed.")
+					w.logger.Info("File read completed")
 					return
 				}
 				if redisCounter, ok := counter.(*RedisCouponCounter); ok {
@@ -479,10 +484,20 @@ func (w *Worker) processCouponFiles(ctx context.Context, counter CouponCounter) 
 // and extracts unique coupon codes from it.
 func downloadAndProcessFile(ctx context.Context, fileURL string, couponStream chan<- []string) error {
 	httpClient := &http.Client{
-		Timeout: 120 * time.Minute, //otherwise download large files is timing out
+		// Timeout: 120 * time.Minute,
 	}
-	resp, err := httpClient.Get(fileURL)
+	// Make sure the HTTP request uses the provided context
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
 	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		// Check for context cancellation explicitly here as well
+		if errors.Is(err, context.Canceled) { //
+			return ctx.Err()
+		}
 		return fmt.Errorf("failed to download file: %w", err)
 	}
 	defer resp.Body.Close()
@@ -490,7 +505,6 @@ func downloadAndProcessFile(ctx context.Context, fileURL string, couponStream ch
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download file, status code: %d", resp.StatusCode)
 	}
-
 	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
